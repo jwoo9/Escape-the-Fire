@@ -1,5 +1,5 @@
 // ─── Config ───────────────────────────────────────────────────────────────────
-const IMAGE_SRC   = 'Main_Annotated_Simple.png';
+const IMAGE_SRC   = 'Main_Annotated.png';
 const PX_TO_M     = 0.11;          // 1 pixel = 0.11 metres
 const IMG_HEIGHT  = 524;           // used to flip Y axis (origin = bottom-left)
 
@@ -210,9 +210,6 @@ function drawLine(p1, p2, colour) {
 
 // ─── Export / Import ──────────────────────────────────────────────────────────
 function exportData() {
-
-    // This downloads the map data containing coordinates (in pixels) of all the points defining rooms, doors, corridors
-
   // Strip internal _px fields before saving
   const clean = shapes.map(({ _px, pixel, ...rest }) => rest);
   const blob  = new Blob([JSON.stringify({ shapes: clean }, null, 2)],
@@ -223,12 +220,7 @@ function exportData() {
   a.click();
 }
 
-function importData() {   
-    
-    // This can be used to import data in (i.e. importing data will auto-add shapes to the map. 
-    // This should be used to make necessary edits to the map data boundaries, doors, etc.
-
-
+function importData() {
   const input    = document.createElement('input');
   input.type     = 'file';
   input.accept   = '.json';
