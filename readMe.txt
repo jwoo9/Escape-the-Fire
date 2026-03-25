@@ -22,3 +22,14 @@ MAKING CHANGES:
     2. For Barriers: These are lines. Just click two points and it will make a barrier.
     3. For Doors: These are single points, just click anywhere.
 
+
+Update on 3.25.26
+
+Follow these steps to create a Evac Path Set
+
+
+	1. Type in the information for the set in 'New Path Set', i.e. the name, the color you want for the arrows, plus the door ID (shows which door the path leads to)	
+	2. Click ' + New Set '.
+	3. Click 'Start Drawing'. You need to click this before beginning drawing or else you will draw rooms/corridors/barriers (P.S. If this happens just finish drawing what you started by hitting 'Close Drawing' at the top and then clicking undo).
+	4. When done make sure to export JSON
+
