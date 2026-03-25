@@ -29,7 +29,8 @@ Follow these steps to create a Evac Path Set
 
 
 	1. Type in the information for the set in 'New Path Set', i.e. the name, the color you want for the arrows, plus the door ID (shows which door the path leads to)	
-	2. Click ' + New Set '.
-	3. Click 'Start Drawing'. You need to click this before beginning drawing or else you will draw rooms/corridors/barriers (P.S. If this happens just finish drawing what you started by hitting 'Close Drawing' at the top and then clicking undo).
-	4. When done make sure to export JSON
+	2. Click ' + New Set '. This should save a Path Set which shows up.
+	3. First click the Path set and hit 'Start Drawing'. You need to click this before beginning drawing or else you will draw rooms/corridors/barriers 
+	4. If you accidentally began drawing a room etc. just close the shape and hit undo.
+	5. When done make sure to export JSON
 
