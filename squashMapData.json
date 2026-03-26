@@ -1,0 +1,1253 @@
+{
+  "shapes": [
+    {
+      "id": "room_1",
+      "type": "room",
+      "label": "room 1",
+      "polygon": [
+        {
+          "x": 0.422,
+          "y": 33.293
+        },
+        {
+          "x": 0.202,
+          "y": 20.643
+        },
+        {
+          "x": 5.702,
+          "y": 20.643
+        },
+        {
+          "x": 8.892,
+          "y": 20.643
+        },
+        {
+          "x": 8.892,
+          "y": 33.513
+        },
+        {
+          "x": 0.422,
+          "y": 33.403
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_2",
+      "type": "room",
+      "label": "room 2",
+      "polygon": [
+        {
+          "x": 3.062,
+          "y": 20.753
+        },
+        {
+          "x": 2.952,
+          "y": 12.833
+        },
+        {
+          "x": 8.892,
+          "y": 12.833
+        },
+        {
+          "x": 8.782,
+          "y": 20.753
+        },
+        {
+          "x": 3.172,
+          "y": 20.753
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_3",
+      "type": "room",
+      "label": "room 3",
+      "polygon": [
+        {
+          "x": 9.002,
+          "y": 33.293
+        },
+        {
+          "x": 19.452,
+          "y": 33.403
+        },
+        {
+          "x": 19.342,
+          "y": 26.143
+        },
+        {
+          "x": 8.892,
+          "y": 26.253
+        },
+        {
+          "x": 9.112,
+          "y": 33.183
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_4",
+      "type": "room",
+      "label": "room 4",
+      "polygon": [
+        {
+          "x": 9.002,
+          "y": 26.143
+        },
+        {
+          "x": 8.892,
+          "y": 19.433
+        },
+        {
+          "x": 19.342,
+          "y": 19.543
+        },
+        {
+          "x": 19.342,
+          "y": 26.253
+        },
+        {
+          "x": 9.112,
+          "y": 26.143
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_5",
+      "type": "room",
+      "label": "room 5",
+      "polygon": [
+        {
+          "x": 8.892,
+          "y": 19.323
+        },
+        {
+          "x": 8.892,
+          "y": 12.723
+        },
+        {
+          "x": 11.862,
+          "y": 12.833
+        },
+        {
+          "x": 11.752,
+          "y": 19.653
+        },
+        {
+          "x": 9.222,
+          "y": 19.323
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_6",
+      "type": "room",
+      "label": "room 6",
+      "polygon": [
+        {
+          "x": 23.962,
+          "y": 33.403
+        },
+        {
+          "x": 23.962,
+          "y": 26.253
+        },
+        {
+          "x": 34.522,
+          "y": 26.363
+        },
+        {
+          "x": 34.412,
+          "y": 33.403
+        },
+        {
+          "x": 24.182,
+          "y": 33.403
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_7",
+      "type": "room",
+      "label": "room 7",
+      "polygon": [
+        {
+          "x": 24.072,
+          "y": 26.253
+        },
+        {
+          "x": 23.962,
+          "y": 19.543
+        },
+        {
+          "x": 34.302,
+          "y": 19.653
+        },
+        {
+          "x": 34.412,
+          "y": 26.473
+        },
+        {
+          "x": 24.182,
+          "y": 26.253
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "corridor_1",
+      "type": "corridor",
+      "label": "corridor 1",
+      "polygon": [
+        {
+          "x": 19.452,
+          "y": 33.293
+        },
+        {
+          "x": 19.342,
+          "y": 19.543
+        },
+        {
+          "x": 23.962,
+          "y": 19.653
+        },
+        {
+          "x": 23.962,
+          "y": 33.403
+        },
+        {
+          "x": 19.672,
+          "y": 33.293
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "corridor_2",
+      "type": "corridor",
+      "label": "corridor 2",
+      "polygon": [
+        {
+          "x": 11.862,
+          "y": 19.433
+        },
+        {
+          "x": 11.862,
+          "y": 12.723
+        },
+        {
+          "x": 34.412,
+          "y": 12.833
+        },
+        {
+          "x": 34.412,
+          "y": 19.543
+        },
+        {
+          "x": 11.972,
+          "y": 19.433
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_8",
+      "type": "room",
+      "label": "room 8",
+      "polygon": [
+        {
+          "x": 34.522,
+          "y": 33.293
+        },
+        {
+          "x": 40.792,
+          "y": 33.403
+        },
+        {
+          "x": 40.792,
+          "y": 26.803
+        },
+        {
+          "x": 34.412,
+          "y": 26.913
+        },
+        {
+          "x": 34.522,
+          "y": 33.293
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_9",
+      "type": "room",
+      "label": "room 9",
+      "polygon": [
+        {
+          "x": 40.902,
+          "y": 33.293
+        },
+        {
+          "x": 57.952,
+          "y": 33.403
+        },
+        {
+          "x": 57.732,
+          "y": 27.023
+        },
+        {
+          "x": 40.902,
+          "y": 26.913
+        },
+        {
+          "x": 41.012,
+          "y": 33.293
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_10",
+      "type": "room",
+      "label": "room 10",
+      "polygon": [
+        {
+          "x": 34.522,
+          "y": 26.803
+        },
+        {
+          "x": 34.412,
+          "y": 18.223
+        },
+        {
+          "x": 44.092,
+          "y": 18.333
+        },
+        {
+          "x": 43.982,
+          "y": 27.133
+        },
+        {
+          "x": 34.522,
+          "y": 26.803
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_11",
+      "type": "room",
+      "label": "room 11",
+      "polygon": [
+        {
+          "x": 44.092,
+          "y": 27.023
+        },
+        {
+          "x": 44.092,
+          "y": 24.713
+        },
+        {
+          "x": 47.392,
+          "y": 24.713
+        },
+        {
+          "x": 47.502,
+          "y": 26.913
+        },
+        {
+          "x": 44.202,
+          "y": 26.913
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_12",
+      "type": "room",
+      "label": "room 12",
+      "polygon": [
+        {
+          "x": 44.092,
+          "y": 24.713
+        },
+        {
+          "x": 44.092,
+          "y": 22.183
+        },
+        {
+          "x": 47.392,
+          "y": 22.293
+        },
+        {
+          "x": 47.282,
+          "y": 24.713
+        },
+        {
+          "x": 44.092,
+          "y": 24.603
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_13",
+      "type": "room",
+      "label": "room 13",
+      "polygon": [
+        {
+          "x": 44.092,
+          "y": 22.183
+        },
+        {
+          "x": 44.092,
+          "y": 18.223
+        },
+        {
+          "x": 47.282,
+          "y": 18.223
+        },
+        {
+          "x": 47.392,
+          "y": 22.293
+        },
+        {
+          "x": 44.202,
+          "y": 22.293
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_14",
+      "type": "room",
+      "label": "room 14",
+      "polygon": [
+        {
+          "x": 47.502,
+          "y": 26.913
+        },
+        {
+          "x": 60.592,
+          "y": 27.023
+        },
+        {
+          "x": 60.482,
+          "y": 18.223
+        },
+        {
+          "x": 47.502,
+          "y": 18.223
+        },
+        {
+          "x": 47.502,
+          "y": 26.803
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_15",
+      "type": "room",
+      "label": "room 15",
+      "polygon": [
+        {
+          "x": 52.342,
+          "y": 18.003
+        },
+        {
+          "x": 52.342,
+          "y": 13.053
+        },
+        {
+          "x": 60.592,
+          "y": 13.163
+        },
+        {
+          "x": 60.592,
+          "y": 18.223
+        },
+        {
+          "x": 52.562,
+          "y": 18.113
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "room_16",
+      "type": "room",
+      "label": "room 16",
+      "polygon": [
+        {
+          "x": 57.842,
+          "y": 33.293
+        },
+        {
+          "x": 60.482,
+          "y": 33.403
+        },
+        {
+          "x": 60.592,
+          "y": 26.913
+        },
+        {
+          "x": 57.842,
+          "y": 27.133
+        },
+        {
+          "x": 57.952,
+          "y": 33.073
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "corridor_3",
+      "type": "corridor",
+      "label": "corridor 3",
+      "polygon": [
+        {
+          "x": 34.522,
+          "y": 18.113
+        },
+        {
+          "x": 52.232,
+          "y": 18.223
+        },
+        {
+          "x": 52.232,
+          "y": 13.053
+        },
+        {
+          "x": 34.522,
+          "y": 13.163
+        },
+        {
+          "x": 34.742,
+          "y": 18.113
+        }
+      ],
+      "evacuation_route_color": null,
+      "connected_doors": []
+    },
+    {
+      "id": "door_1",
+      "type": "door",
+      "position": {
+        "x": 6.252,
+        "y": 20.533
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_2",
+      "type": "door",
+      "position": {
+        "x": 9.112,
+        "y": 16.023
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_3",
+      "type": "door",
+      "position": {
+        "x": 6.252,
+        "y": 12.723
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_4",
+      "type": "door",
+      "position": {
+        "x": 11.752,
+        "y": 16.133
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_5",
+      "type": "door",
+      "position": {
+        "x": 19.452,
+        "y": 23.173
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_6",
+      "type": "door",
+      "position": {
+        "x": 19.342,
+        "y": 29.663
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_7",
+      "type": "door",
+      "position": {
+        "x": 24.182,
+        "y": 29.773
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_8",
+      "type": "door",
+      "position": {
+        "x": 24.182,
+        "y": 23.173
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_9",
+      "type": "door",
+      "position": {
+        "x": 35.622,
+        "y": 18.223
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_10",
+      "type": "door",
+      "position": {
+        "x": 45.742,
+        "y": 18.223
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_11",
+      "type": "door",
+      "position": {
+        "x": 47.392,
+        "y": 23.613
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_12",
+      "type": "door",
+      "position": {
+        "x": 47.502,
+        "y": 25.593
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_13",
+      "type": "door",
+      "position": {
+        "x": 48.052,
+        "y": 27.023
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_14",
+      "type": "door",
+      "position": {
+        "x": 49.922,
+        "y": 27.023
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_15",
+      "type": "door",
+      "position": {
+        "x": 35.622,
+        "y": 26.803
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_16",
+      "type": "door",
+      "position": {
+        "x": 48.712,
+        "y": 12.943
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_17",
+      "type": "door",
+      "position": {
+        "x": 52.342,
+        "y": 17.453
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "door_18",
+      "type": "door",
+      "position": {
+        "x": 57.952,
+        "y": 30.213
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "barrier_1",
+      "type": "barrier",
+      "start": {
+        "x": 0.422,
+        "y": 33.183
+      },
+      "end": {
+        "x": 60.702,
+        "y": 33.403
+      }
+    },
+    {
+      "id": "barrier_2",
+      "type": "barrier",
+      "start": {
+        "x": 60.592,
+        "y": 33.293
+      },
+      "end": {
+        "x": 60.702,
+        "y": 13.053
+      }
+    },
+    {
+      "id": "barrier_3",
+      "type": "barrier",
+      "start": {
+        "x": 60.812,
+        "y": 13.053
+      },
+      "end": {
+        "x": 49.482,
+        "y": 13.053
+      }
+    },
+    {
+      "id": "barrier_4",
+      "type": "barrier",
+      "start": {
+        "x": 47.942,
+        "y": 12.833
+      },
+      "end": {
+        "x": 22.422,
+        "y": 12.723
+      }
+    },
+    {
+      "id": "door_19",
+      "type": "door",
+      "position": {
+        "x": 21.542,
+        "y": 12.723
+      },
+      "is_exit": false,
+      "connects": []
+    },
+    {
+      "id": "barrier_5",
+      "type": "barrier",
+      "start": {
+        "x": 20.332,
+        "y": 12.943
+      },
+      "end": {
+        "x": 7.132,
+        "y": 12.833
+      }
+    },
+    {
+      "id": "barrier_6",
+      "type": "barrier",
+      "start": {
+        "x": 5.372,
+        "y": 12.723
+      },
+      "end": {
+        "x": 3.172,
+        "y": 12.833
+      }
+    },
+    {
+      "id": "barrier_7",
+      "type": "barrier",
+      "start": {
+        "x": 3.172,
+        "y": 12.833
+      },
+      "end": {
+        "x": 3.172,
+        "y": 20.643
+      }
+    },
+    {
+      "id": "barrier_8",
+      "type": "barrier",
+      "start": {
+        "x": 3.282,
+        "y": 20.533
+      },
+      "end": {
+        "x": 0.312,
+        "y": 20.533
+      }
+    },
+    {
+      "id": "barrier_9",
+      "type": "barrier",
+      "start": {
+        "x": 0.312,
+        "y": 20.643
+      },
+      "end": {
+        "x": 0.422,
+        "y": 33.183
+      }
+    },
+    {
+      "id": "barrier_10",
+      "type": "barrier",
+      "start": {
+        "x": 9.112,
+        "y": 33.073
+      },
+      "end": {
+        "x": 8.892,
+        "y": 16.793
+      }
+    },
+    {
+      "id": "barrier_11",
+      "type": "barrier",
+      "start": {
+        "x": 9.002,
+        "y": 15.253
+      },
+      "end": {
+        "x": 8.892,
+        "y": 12.723
+      }
+    },
+    {
+      "id": "barrier_12",
+      "type": "barrier",
+      "start": {
+        "x": 3.172,
+        "y": 20.533
+      },
+      "end": {
+        "x": 5.592,
+        "y": 20.533
+      }
+    },
+    {
+      "id": "barrier_13",
+      "type": "barrier",
+      "start": {
+        "x": 7.022,
+        "y": 20.533
+      },
+      "end": {
+        "x": 8.892,
+        "y": 20.753
+      }
+    },
+    {
+      "id": "barrier_14",
+      "type": "barrier",
+      "start": {
+        "x": 9.222,
+        "y": 19.433
+      },
+      "end": {
+        "x": 19.342,
+        "y": 19.653
+      }
+    },
+    {
+      "id": "barrier_15",
+      "type": "barrier",
+      "start": {
+        "x": 19.342,
+        "y": 19.543
+      },
+      "end": {
+        "x": 19.342,
+        "y": 22.513
+      }
+    },
+    {
+      "id": "barrier_16",
+      "type": "barrier",
+      "start": {
+        "x": 19.452,
+        "y": 23.723
+      },
+      "end": {
+        "x": 19.452,
+        "y": 29.003
+      }
+    },
+    {
+      "id": "barrier_17",
+      "type": "barrier",
+      "start": {
+        "x": 19.452,
+        "y": 26.143
+      },
+      "end": {
+        "x": 9.112,
+        "y": 26.143
+      }
+    },
+    {
+      "id": "barrier_18",
+      "type": "barrier",
+      "start": {
+        "x": 19.452,
+        "y": 30.213
+      },
+      "end": {
+        "x": 19.342,
+        "y": 33.183
+      }
+    },
+    {
+      "id": "barrier_19",
+      "type": "barrier",
+      "start": {
+        "x": 24.182,
+        "y": 33.073
+      },
+      "end": {
+        "x": 24.072,
+        "y": 30.433
+      }
+    },
+    {
+      "id": "barrier_20",
+      "type": "barrier",
+      "start": {
+        "x": 24.292,
+        "y": 28.893
+      },
+      "end": {
+        "x": 24.182,
+        "y": 23.723
+      }
+    },
+    {
+      "id": "barrier_21",
+      "type": "barrier",
+      "start": {
+        "x": 24.292,
+        "y": 22.293
+      },
+      "end": {
+        "x": 24.072,
+        "y": 19.543
+      }
+    },
+    {
+      "id": "barrier_22",
+      "type": "barrier",
+      "start": {
+        "x": 24.292,
+        "y": 19.543
+      },
+      "end": {
+        "x": 34.522,
+        "y": 19.653
+      }
+    },
+    {
+      "id": "barrier_23",
+      "type": "barrier",
+      "start": {
+        "x": 34.522,
+        "y": 19.763
+      },
+      "end": {
+        "x": 34.412,
+        "y": 33.293
+      }
+    },
+    {
+      "id": "barrier_24",
+      "type": "barrier",
+      "start": {
+        "x": 34.632,
+        "y": 26.473
+      },
+      "end": {
+        "x": 24.512,
+        "y": 26.473
+      }
+    },
+    {
+      "id": "barrier_25",
+      "type": "barrier",
+      "start": {
+        "x": 11.862,
+        "y": 17.013
+      },
+      "end": {
+        "x": 11.752,
+        "y": 19.433
+      }
+    },
+    {
+      "id": "barrier_26",
+      "type": "barrier",
+      "start": {
+        "x": 11.862,
+        "y": 15.363
+      },
+      "end": {
+        "x": 11.752,
+        "y": 12.833
+      }
+    },
+    {
+      "id": "barrier_27",
+      "type": "barrier",
+      "start": {
+        "x": 36.722,
+        "y": 26.803
+      },
+      "end": {
+        "x": 47.392,
+        "y": 27.023
+      }
+    },
+    {
+      "id": "barrier_28",
+      "type": "barrier",
+      "start": {
+        "x": 44.092,
+        "y": 26.913
+      },
+      "end": {
+        "x": 43.982,
+        "y": 18.113
+      }
+    },
+    {
+      "id": "barrier_29",
+      "type": "barrier",
+      "start": {
+        "x": 44.202,
+        "y": 18.223
+      },
+      "end": {
+        "x": 36.612,
+        "y": 18.333
+      }
+    },
+    {
+      "id": "barrier_30",
+      "type": "barrier",
+      "start": {
+        "x": 34.412,
+        "y": 19.433
+      },
+      "end": {
+        "x": 34.522,
+        "y": 18.223
+      }
+    },
+    {
+      "id": "barrier_31",
+      "type": "barrier",
+      "start": {
+        "x": 40.902,
+        "y": 27.023
+      },
+      "end": {
+        "x": 40.902,
+        "y": 33.293
+      }
+    },
+    {
+      "id": "barrier_32",
+      "type": "barrier",
+      "start": {
+        "x": 44.202,
+        "y": 24.603
+      },
+      "end": {
+        "x": 47.612,
+        "y": 24.713
+      }
+    },
+    {
+      "id": "barrier_33",
+      "type": "barrier",
+      "start": {
+        "x": 47.502,
+        "y": 24.933
+      },
+      "end": {
+        "x": 47.502,
+        "y": 24.273
+      }
+    },
+    {
+      "id": "barrier_34",
+      "type": "barrier",
+      "start": {
+        "x": 47.612,
+        "y": 22.733
+      },
+      "end": {
+        "x": 47.392,
+        "y": 18.113
+      }
+    },
+    {
+      "id": "barrier_35",
+      "type": "barrier",
+      "start": {
+        "x": 46.622,
+        "y": 18.223
+      },
+      "end": {
+        "x": 60.702,
+        "y": 18.333
+      }
+    },
+    {
+      "id": "barrier_36",
+      "type": "barrier",
+      "start": {
+        "x": 52.342,
+        "y": 16.793
+      },
+      "end": {
+        "x": 52.342,
+        "y": 13.053
+      }
+    },
+    {
+      "id": "barrier_37",
+      "type": "barrier",
+      "start": {
+        "x": 44.422,
+        "y": 22.293
+      },
+      "end": {
+        "x": 47.612,
+        "y": 22.293
+      }
+    },
+    {
+      "id": "barrier_38",
+      "type": "barrier",
+      "start": {
+        "x": 44.642,
+        "y": 22.183
+      },
+      "end": {
+        "x": 44.092,
+        "y": 22.183
+      }
+    },
+    {
+      "id": "barrier_39",
+      "type": "barrier",
+      "start": {
+        "x": 50.802,
+        "y": 26.913
+      },
+      "end": {
+        "x": 60.702,
+        "y": 26.913
+      }
+    },
+    {
+      "id": "barrier_40",
+      "type": "barrier",
+      "start": {
+        "x": 48.932,
+        "y": 27.023
+      },
+      "end": {
+        "x": 49.482,
+        "y": 26.913
+      }
+    },
+    {
+      "id": "barrier_41",
+      "type": "barrier",
+      "start": {
+        "x": 58.062,
+        "y": 26.913
+      },
+      "end": {
+        "x": 57.952,
+        "y": 29.663
+      }
+    },
+    {
+      "id": "barrier_42",
+      "type": "barrier",
+      "start": {
+        "x": 57.952,
+        "y": 30.873
+      },
+      "end": {
+        "x": 57.952,
+        "y": 33.183
+      }
+    }
+  ]
+}
