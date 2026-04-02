@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Evacuation Navigator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; font-family: monospace; }
+    canvas { border: 2px solid #444; cursor: crosshair; max-width: 100%; }
+
+    #controls { color: white; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button { padding: 8px 14px; cursor: pointer; border-radius: 4px; border: none; color: #fff; font-family: monospace; }
+
+    #status { width: 100%; padding: 3px 14px; }
+    #load-status { font-size: 0.78rem; color: #aaa; }
+    #load-status.ok  { color: #44ff88; }
+    #load-status.err { color: #ff4455; }
+
+    /* ── Bottom info panel ── */
+    #nav-editor {
+      width: 100%; background: #111; border-top: 2px solid #333;
+      padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;
+      color: #ccc;
+    }
+
+    #detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    @media (max-width: 600px) { #detail-grid { grid-template-columns: 1fr; } }
+
+    .detail-card {
+      border: 1px solid #2a2a2a;
+      background: #161616;
+      border-radius: 3px;
+      padding: 7px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .detail-card .card-title {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #444;
+      border-bottom: 1px solid #222;
+      padding-bottom: 4px;
+      margin-bottom: 2px;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 6px;
+      align-items: baseline;
+      font-size: 0.78rem;
+    }
+    .field-row .lbl {
+      color: #555;
+      min-width: 95px;
+      font-size: 0.68rem;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .field-row .val        { color: #ccc; word-break: break-all; }
+    .field-row .val.accent { color: #f5c518; font-weight: bold; }
+    .field-row .val.ok     { color: #44ff88; }
+    .field-row .val.muted  { color: #444; font-style: italic; }
+
+    .route-swatch {
+      display: inline-block; width: 11px; height: 11px;
+      border-radius: 2px; background: #333;
+      vertical-align: middle; margin-right: 5px;
+      flex-shrink: 0; border: 1px solid #444;
+    }
+
+    #bottom-row {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      border-top: 1px solid #222; padding-top: 7px;
+    }
+    #cell-pos { font-size: 0.75rem; color: #555; flex: 1; }
+
+    #pin-hint {
+      background: #1a3a4a; padding: 5px 11px; border-radius: 3px;
+      color: #ccc; font-size: 0.82rem;
+      border: 1px solid #2a5a6a; user-select: none;
+    }
+    #pin-hint kbd {
+      background: #0d2030; border: 1px solid #4a8aaa;
+      border-radius: 2px; padding: 1px 5px;
+    }
+    #pin-hint.pinned { border-color: #44ff88; color: #44ff88; }
+
+    #nav-status-bar {
+      font-size: 0.78rem; color: #44ff88; min-height: 1.2em;
+      border-top: 1px solid #222; padding-top: 6px;
+    }
+
+    @keyframes flash-in {
+      from { background: rgba(255,255,100,0.15); }
+      to   { background: transparent; }
+    }
+    .flash { animation: flash-in 0.45s ease-out; }
+  </style>
+</head>
+<body>
+
+  <div id="controls">
+    <button onclick="loadMapFile()"         style="background:#119;">&#8593; Load map_data.json</button>
+    <button onclick="nav.buildOverlapMap()" style="background:#191;">&#8635; Build Route Map</button>
+  </div>
+  <div id="status">
+    <span id="load-status">No file loaded — click "Load map_data.json" to begin.</span>
+  </div>
+
+  <canvas id="mapCanvas"></canvas>
+
+  <div id="nav-editor">
+
+    <div id="detail-grid">
+
+      <!-- LEFT card: room / shape detail -->
+      <div class="detail-card">
+        <div class="card-title">&#127968; Current Location</div>
+        <div class="field-row">
+          <span class="lbl">Name / Label</span>
+          <span class="val accent" id="cell-room">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Shape ID</span>
+          <span class="val" id="cell-room-id">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Type</span>
+          <span class="val" id="cell-room-type">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Connected Doors</span>
+          <span class="val" id="cell-room-doors">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Assigned Route</span>
+          <span class="val" id="cell-room-routecol">—</span>
+        </div>
+      </div>
+
+      <!-- RIGHT card: active path-set detail -->
+      <div class="detail-card">
+        <div class="card-title">&#9650; Active Evacuation Route</div>
+        <div class="field-row">
+          <span class="lbl">Route Name</span>
+          <span class="val accent" style="display:flex;align-items:center;">
+            <span class="route-swatch" id="cell-route-swatch"></span>
+            <span id="cell-route-name">—</span>
+          </span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Path Set ID</span>
+          <span class="val" id="cell-route-id">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Exit Door</span>
+          <span class="val ok" id="cell-exit">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Arrows in Set</span>
+          <span class="val" id="cell-arrow-count">—</span>
+        </div>
+        <div class="field-row">
+          <span class="lbl">Colour Hex</span>
+          <span class="val" id="cell-route-color-hex">—</span>
+        </div>
+      </div>
+
+    </div><!-- /detail-grid -->
+
+    <div id="bottom-row">
+      <span id="cell-pos">hover over map</span>
+      <span id="pin-hint">&#128205; Pin User &mdash; Press <kbd>P</kbd></span>
+      <button onclick="unpinUser()" style="background:#2a2a2a; font-size:0.8rem;">&#10005; Unpin</button>
+    </div>
+
+    <div id="nav-status-bar">Load a map file, then click "Build Route Map".</div>
+
+  </div>
+
+  <script src="navigator.js"></script>
+</body>
+</html>
