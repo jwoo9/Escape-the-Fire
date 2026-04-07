@@ -1,0 +1,36 @@
+{
+  "rules": {
+    "emergencies": {
+      "$buildingId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "hazards": {
+      "$buildingId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "locations": {
+      "$buildingId": {
+        ".read": "auth != null",
+        "$userId": {
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    },
+    "announcements": {
+      "$buildingId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "pushTokens": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    }
+  }
+}

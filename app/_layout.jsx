@@ -15,21 +15,20 @@ function RouteGuard({ children }) {
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === 'auth';
+    const inAdminGroup = segments[0] === 'admin';
+    const inStaffGroup = segments[0] === 'staff';
+
     if (!user && !inAuthGroup) {
       router.replace('/auth/login');
-    } else if (user && role === 'admin') {
+    } else if (user && role === 'admin' && !inAdminGroup) {
       router.replace('/admin/dashboard');
-    } else if (user && role === 'staff') {
+    } else if (user && role === 'staff' && !inStaffGroup) {
       router.replace('/staff/map');
     }
-  }, [user, role, loading, router, segments]);
+  }, [user, role, loading]);
 
   return <>{children}</>;
 }
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -38,11 +37,14 @@ export default function RootLayout() {
     <AuthProvider>
       <RouteGuard>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="auth/login" />
+            <Stack.Screen name="admin/dashboard" />
+            <Stack.Screen name="staff/map" />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
         </ThemeProvider>
       </RouteGuard>
     </AuthProvider>
