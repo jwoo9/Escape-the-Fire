@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Building Map Annotator</title>
+  <style>
+    body { margin: 0; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; }
+    canvas { border: 2px solid #444; cursor: crosshair; }
+    #controls { color: white; padding: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { padding: 8px 14px; cursor: pointer; border-radius: 4px; border: none; }
+    #status { color: #aaa; font-family: monospace; padding: 5px 10px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="setMode('room')"       style="background:#e05;">Room</button>
+    <button onclick="setMode('corridor')"   style="background:#2a2;">Corridor</button>
+    <button onclick="setMode('door')"       style="background:#44f;">Door</button>
+    <button onclick="setMode('barrier')"    style="background:#f80;">Barrier</button>
+    <button onclick="closePolygon()"        style="background:#555;">Close Shape</button>
+    <button onclick="undoLast()"            style="background:#333;">Undo</button>
+    <button onclick="exportData()"          style="background:#191;">Export JSON</button>
+    <button onclick="importData()"          style="background:#119;">Import JSON</button>
+  </div>
+  <div id="status">Mode: room | Click to place points | Close Shape to finish polygon</div>
+  <canvas id="mapCanvas"></canvas>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
