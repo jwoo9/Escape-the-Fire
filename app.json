@@ -9,7 +9,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to detect BLE beacons for indoor positioning during emergency evacuations.",
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to detect BLE beacons for indoor positioning.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to determine your position inside the building for evacuation routing.",
+        "NSLocationAlwaysUsageDescription": "This app uses your location to track your position during emergencies.",
+        "UIBackgroundModes": ["bluetooth-central"]
+      },
+      "bundleIdentifier": "com.metinhalac.escapethefire"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +27,16 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.metinhalac.escapethefire"
     },
     "web": {
       "output": "static",
@@ -39,7 +56,8 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "./plugins/withIBeaconRanging.js"
     ],
     "experiments": {
       "typedRoutes": true,
