@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../services/auth';
@@ -33,11 +35,18 @@ export default function AdminSettings() {
 
   const trackedCount = Object.keys(locations).length;
 
-  const handleLogout = () =>
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Sign Out? You will be signed out of the admin panel.')) {
+        logout();
+      }
+      return;
+    }
     Alert.alert('Sign Out', 'You will be signed out of the admin panel.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: logout },
     ]);
+  };
 
   const handleClearEmergency = () => {
     if (Platform.OS === 'web') {
@@ -57,6 +66,56 @@ export default function AdminSettings() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Unblock All', style: 'destructive', onPress: () => blockedZones.forEach(z => unblockZone(z.zoneId)) },
     ]);
+
+  const handleExportLog = async () => {
+    const rows = [];
+    rows.push(['Escape the Fire - Incident Log']);
+    rows.push(['Generated At', new Date().toLocaleString()]);
+    rows.push([]);
+    rows.push(['--- SYSTEM STATUS ---']);
+    rows.push(['Emergency Active', emergency.active ? 'YES' : 'NO']);
+    if (emergency.active) {
+      rows.push(['Triggered At', emergency.triggeredAt?.toDate ? emergency.triggeredAt.toDate().toLocaleString() : 'Unknown']);
+    }
+    rows.push([]);
+    rows.push(['--- BLOCKED ZONES ---']);
+    rows.push(['Zone ID', 'Zone Name', 'Blocked At']);
+    blockedZones.forEach(z => {
+      const time = z.blockedAt?.toDate ? z.blockedAt.toDate().toLocaleString() : 'Unknown';
+      rows.push([z.zoneId, z.zoneLabel, time]);
+    });
+    rows.push([]);
+    rows.push(['--- LIVE STAFF LOCATIONS ---']);
+    rows.push(['UID', 'Floor', 'X (px)', 'Y (px)', 'Last Updated']);
+    Object.entries(locations).forEach(([uid, loc]) => {
+      const time = loc.updatedAt ? new Date(loc.updatedAt).toLocaleString() : 'Unknown';
+      rows.push([uid, loc.floor, Math.round(loc.x_px || 0), Math.round(loc.y_px || 0), time]);
+    });
+
+    const csvContent = rows.map(e => e.join(',')).join('\n');
+    const filename = `Incident_Log_${new Date().getTime()}.csv`;
+
+    if (Platform.OS === 'web') {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    } else {
+      try {
+        const fileUri = FileSystem.documentDirectory + filename;
+        await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri);
+        } else {
+          Alert.alert('Export Failed', 'Sharing is not available on this device.');
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to export log.');
+      }
+    }
+  };
 
   const initials = (user?.displayName ?? user?.email ?? 'A')
     .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
@@ -156,13 +215,13 @@ export default function AdminSettings() {
               <View style={s.divider} />
             </>
           )}
-          <View style={[s.actionRow, { opacity: 0.4 }]}>
-            <View style={[s.actionIcon, { backgroundColor: '#1e293b' }]}>
-              <Ionicons name="download-outline" size={18} color="#94a3b8" />
+          <TouchableOpacity style={s.actionRow} onPress={handleExportLog}>
+            <View style={[s.actionIcon, { backgroundColor: '#1e3a8a' }]}>
+              <Ionicons name="download-outline" size={18} color="#60a5fa" />
             </View>
-            <Text style={s.actionLabel}>Export Incident Log</Text>
-            <Text style={s.comingSoon}>Soon</Text>
-          </View>
+            <Text style={[s.actionLabel, { color: '#60a5fa' }]}>Export Incident Log</Text>
+            <Ionicons name="chevron-forward" size={16} color="#334155" />
+          </TouchableOpacity>
         </View>
 
         {/* Blocked zones */}
@@ -185,6 +244,32 @@ export default function AdminSettings() {
             </View>
           </>
         )}
+
+        {/* Permissions */}
+        <Text style={s.sectionLabel}>PERMISSIONS & PRIVACY</Text>
+        <View style={s.card}>
+          <View style={s.row}>
+            <View style={s.rowLeft}>
+              <Ionicons name="location-outline" size={14} color="#94a3b8" />
+              <Text style={s.rowLabel}>Location Tracking</Text>
+            </View>
+            <Text style={s.rowValue}>Required for Map</Text>
+          </View>
+          <View style={s.divider} />
+        <TouchableOpacity style={s.row} onPress={() => {
+          if (Platform.OS === 'web') {
+            window.alert('Please manage permissions directly in your browser settings.');
+          } else {
+            Linking.openSettings();
+          }
+        }}>
+            <View style={s.rowLeft}>
+              <Ionicons name="settings-outline" size={14} color="#94a3b8" />
+              <Text style={s.rowLabel}>Manage OS Permissions</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#475569" />
+          </TouchableOpacity>
+        </View>
 
         {/* App info */}
         <Text style={s.sectionLabel}>APP INFO</Text>

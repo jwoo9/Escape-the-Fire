@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../services/auth';
@@ -17,11 +17,18 @@ export default function StaffSettings() {
     return () => { unsubE(); unsubZ(); };
   }, []);
 
-  const handleLogout = () =>
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Sign Out? You will be signed out of the evacuation system.')) {
+        logout();
+      }
+      return;
+    }
     Alert.alert('Sign Out', 'You will be signed out of the evacuation system.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: logout },
     ]);
+  };
 
   const initials = (user?.displayName ?? user?.email ?? '?')
     .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
@@ -98,6 +105,32 @@ export default function StaffSettings() {
             </View>
           </>
         )}
+
+        {/* Permissions */}
+        <Text style={s.sectionLabel}>PERMISSIONS & PRIVACY</Text>
+        <View style={s.card}>
+          <View style={s.row}>
+            <View style={s.rowLeft}>
+              <Ionicons name="location-outline" size={14} color="#94a3b8" />
+              <Text style={s.rowLabel}>Location Tracking</Text>
+            </View>
+            <Text style={s.rowValue}>Required for Map</Text>
+          </View>
+          <View style={s.divider} />
+        <TouchableOpacity style={s.row} onPress={() => {
+          if (Platform.OS === 'web') {
+            window.alert('Please manage permissions directly in your browser settings.');
+          } else {
+            Linking.openSettings();
+          }
+        }}>
+            <View style={s.rowLeft}>
+              <Ionicons name="settings-outline" size={14} color="#94a3b8" />
+              <Text style={s.rowLabel}>Manage OS Permissions</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#475569" />
+          </TouchableOpacity>
+        </View>
 
         {/* App info */}
         <Text style={s.sectionLabel}>APP INFO</Text>

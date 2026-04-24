@@ -29,13 +29,13 @@ const SCREEN = Dimensions.get('window');
 interface StaffDot { uid: string; svgX: number; svgY: number; initials: string }
 
 interface FloorMapProps {
-  floor:           FloorData;
-  userPosition?:   { svgX: number; svgY: number } | null;
-  allStaff?:       StaffDot[];
-  blockedZoneIds?: string[];
-  isEmergency?:    boolean;
-  isAdmin?:        boolean;
-  onZoneTap?:      (zoneId: string, zoneLabel: string) => void;
+  floor:             FloorData;
+  userPosition?:     { svgX: number; svgY: number } | null;
+  allStaff?:         StaffDot[];
+  blockedZoneIds?:   string[];
+  isEmergency?:      boolean;
+  isAdmin?:          boolean;
+  onZoneTap?:        (zoneId: string, zoneLabel: string) => void;
 }
 
 // ─── Arrow ────────────────────────────────────────────────────────────────────
@@ -279,6 +279,7 @@ export default function FloorMap({
     for (const shape of floor.shapes) {
       if (pointInPoly(svgX, svgY, shape.points)) {
         setTappedZoneId(shape.id);
+        setTimeout(() => setTappedZoneId(null), 600); // Flash color for 600ms
         onZoneTap(shape.id, shape.label);
         return;
       }
@@ -333,8 +334,8 @@ export default function FloorMap({
 
   // Use a manual tap via onStart/onEnd on a separate Tap gesture
   const tap = Gesture.Tap()
-    .maxDuration(300)
-    .maxDistance(20) // Very forgiving tap distance so taps don't fail
+    .maxDuration(500)
+    .maxDistance(40) // Extremely forgiving tap distance for sloppy touches
     .onEnd((e) => {
       // Pass live values from UI thread to JS thread safely
       runOnJS(fireTap)(e.x, e.y, tx.value, ty.value, sc.value);
@@ -360,16 +361,20 @@ export default function FloorMap({
 
   // ── Zone colors ───────────────────────────────────────────────────────────
   const roomFill = (id: string, type: string) => {
+    if (id === tappedZoneId) return 'rgba(251,146,60,0.6)'; // Flash bright orange on tap
     if (blockedZoneIds.includes(id)) return 'rgba(239,68,68,0.35)';
     return type === 'room' ? '#1e3a5f' : '#162032';
   };
 
-  const roomStroke = (id: string) => {
+  const roomStroke = (id: string, type: string) => {
     if (blockedZoneIds.includes(id)) return '#ef4444';
     return '#334155';
   };
 
-  const roomStrokeW = (id: string) => blockedZoneIds.includes(id) ? 2.5 : 1;
+  const roomStrokeW = (id: string, type: string) => {
+    if (blockedZoneIds.includes(id)) return 2.5;
+    return 1;
+  };
 
   return (
     <View style={s.container}>
@@ -403,9 +408,8 @@ export default function FloorMap({
                     <Polygon
                       points={pts}
                       fill={roomFill(shape.id, shape.type)}
-                      stroke={roomStroke(shape.id)}
-                      strokeWidth={roomStrokeW(shape.id)}
-                      onPress={() => onZoneTap?.(shape.id, shape.label)}
+                      stroke={roomStroke(shape.id, shape.type)}
+                      strokeWidth={roomStrokeW(shape.id, shape.type)}
                     />
 
                     {/* Room labels — always shown */}
@@ -418,7 +422,6 @@ export default function FloorMap({
                         fill={blocked ? '#fca5a5' : '#94a3b8'}
                         stroke="rgba(0,0,0,0.4)"
                         strokeWidth={0.3}
-                        onPress={() => onZoneTap?.(shape.id, shape.label)}
                       >
                         {shape.label}
                       </SvgText>

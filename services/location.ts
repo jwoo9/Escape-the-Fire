@@ -12,11 +12,12 @@
  * Conversion: svgX = worldX_m / 0.11,  svgY = IMG_H - worldY_m / 0.11
  */
 
+import { PermissionsAndroid, Platform } from 'react-native';
+import { floorFromMajor, FloorId, FLOORS, MapBeacon } from '../constants/mapData';
 import { writeLocation } from './emergency';
-import { FLOORS, floorFromMajor, FloorId, MapBeacon } from '../constants/mapData';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const TX_POWER_DEFAULT = -59;      // dBm at 1m — calibrate per beacon
+const TX_POWER_DEFAULT = -52;      // dBm at 1m — calibrate per beacon
 const PATH_LOSS_N      = 2.5;      // indoor environment factor
 const SCAN_WINDOW_MS   = 1500;     // how long to collect readings per cycle
 const SCAN_INTERVAL_MS = 3000;     // how often to scan
@@ -62,8 +63,21 @@ export const initLocation = (
 };
 
 // ─── Start / Stop ─────────────────────────────────────────────────────────────
+export const requestBluetoothPermissions = async () => {
+  if (Platform.OS === 'android') {
+    try {
+      await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      ]);
+    } catch (err) { console.warn('Failed to request Android permissions:', err); }
+  }
+};
+
 export const startTracking = async () => {
   if (_scanTimer) return;
+  await requestBluetoothPermissions();
 
   try {
     // @ts-ignore - react-native-ble-plx may not be installed

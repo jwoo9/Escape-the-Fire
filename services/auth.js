@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { deleteApp, initializeApp } from 'firebase/app';
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, firebaseConfig } from './firebase';
 
@@ -35,10 +35,10 @@ export const createStaffAccount = async (email, password, name, role = 'staff') 
       active: true,
     });
     await secondaryAuth.signOut();
-    await secondaryApp.delete();
+    await deleteApp(secondaryApp);
     return uid;
   } catch (error) {
-    await secondaryApp.delete();
+    await deleteApp(secondaryApp);
     throw error;
   }
 };

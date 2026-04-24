@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { FLOORS } from '../../constants/mapData';
 import { useAuth } from '../../context/AuthContext';
 import { createStaffAccount, deactivateStaff, logout, reactivateStaff } from '../../services/auth';
@@ -33,6 +34,7 @@ import {
   unblockZone
 } from '../../services/emergency';
 import { db } from '../../services/firebase';
+import { requestNotificationPermissions, sendEmergencyNotification } from '../../services/notifications';
 
 const fmt = (ts: any) => {
   if (!ts) return '—';
@@ -222,7 +224,19 @@ export default function AdminHome() {
   const [tab,           setTab]           = useState<'overview' | 'staff' | 'zones'>('overview');
 
   useEffect(() => {
-    const unsubE = subscribeEmergency(setEmergency);
+    requestNotificationPermissions();
+    
+    let wasActive = false;
+    const unsubE = subscribeEmergency((data) => {
+      if (data.active && !wasActive) {
+        sendEmergencyNotification('🔥 FIRE ALERT', 'Emergency active! Evacuate immediately.');
+        activateKeepAwakeAsync();
+      } else if (!data.active && wasActive) {
+        deactivateKeepAwake();
+      }
+      wasActive = data.active;
+      setEmergency(data);
+    });
     const unsubZ = subscribeBlockedZones(setBlockedZones);
     const unsubL = subscribeLocations(setLocations);
     const unsubS = onSnapshot(collection(db, 'users'), snap =>
@@ -233,6 +247,19 @@ export default function AdminHome() {
 
   const activeStaff  = staff.filter(s => s?.active);
   const trackedStaff = activeStaff.filter(s => locations[s.uid]);
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Sign Out? You will be signed out of the admin panel.')) {
+        logout();
+      }
+      return;
+    }
+    Alert.alert('Sign Out', 'You will be signed out of the admin panel.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: logout },
+    ]);
+  };
 
   const handleClear = () => {
     if (Platform.OS === 'web') {
@@ -247,11 +274,18 @@ export default function AdminHome() {
     ]);
   };
 
-  const handleDeactivate = (m: any) =>
+  const handleDeactivate = (m: any) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Remove ${m.name}'s access?`)) {
+        deactivateStaff(m.uid);
+      }
+      return;
+    }
     Alert.alert('Deactivate', `Remove ${m.name}'s access?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Deactivate', style: 'destructive', onPress: () => deactivateStaff(m.uid) },
     ]);
+  };
 
   const lastSeen = (uid: string) => {
     const loc = locations[uid];
@@ -270,7 +304,7 @@ export default function AdminHome() {
           <Text style={s.headerTitle}>Admin Dashboard</Text>
           <Text style={s.headerSub}>Evacuation Control</Text>
         </View>
-        <TouchableOpacity style={s.signOutBtn} onPress={logout}>
+        <TouchableOpacity style={s.signOutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color="#64748b" />
         </TouchableOpacity>
       </View>

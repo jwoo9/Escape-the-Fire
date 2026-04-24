@@ -15,7 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert,
-  Modal, Pressable,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -23,6 +26,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import FloorMap from '../../components/FloorMap';
 import { FLOORS, FloorId } from '../../constants/mapData';
 import { useAuth } from '../../context/AuthContext';
@@ -35,6 +39,7 @@ import {
   triggerEmergency,
 } from '../../services/emergency';
 import { initLocation, setSimulatedFloor, startTracking, stopTracking } from '../../services/location';
+import { requestNotificationPermissions, sendEmergencyNotification } from '../../services/notifications';
 
 // ─── Emergency Report Modal ───────────────────────────────────────────────────
 type ModalStep = 'ask' | 'confirm' | 'triggering';
@@ -164,15 +169,27 @@ export default function StaffHome() {
   const [currentFloor, setCurrentFloor] = useState<FloorId>('main');
   const [locating,     setLocating]     = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showMapHint,  setShowMapHint]  = useState(false);
+  const [isSelectingZone, setIsSelectingZone] = useState(false);
   const [checkedIn,    setCheckedIn]    = useState(false);
   const [checkingIn,   setCheckingIn]   = useState(false);
 
   const posRef = useRef<{ svgX: number; svgY: number } | null>(null);
-  const blockedIds = blockedZones.filter(z => z.floor === currentFloor).map(z => z.zoneId);
+  const blockedIds = blockedZones.map(z => z.zoneId);
 
   useEffect(() => {
-    const unsubE = subscribeEmergency(setEmergency);
+    requestNotificationPermissions();
+    
+    let wasActive = false;
+    const unsubE = subscribeEmergency((data) => {
+      if (data.active && !wasActive) {
+        sendEmergencyNotification('🔥 FIRE ALERT', 'Emergency active! Evacuate immediately.');
+        activateKeepAwakeAsync();
+      } else if (!data.active && wasActive) {
+        deactivateKeepAwake();
+      }
+      wasActive = data.active;
+      setEmergency(data);
+    });
     const unsubZ = subscribeBlockedZones(setBlockedZones);
     const unsubS = subscribeSafeCheckIns(setSafeCheckIns);
     const unsubL = subscribeLocations(setAllLocations);
@@ -217,6 +234,8 @@ export default function StaffHome() {
   const totalStaff  = Object.keys(allLocations).length;
   const hazardCount = blockedIds.length;
 
+  const floor = FLOORS[currentFloor];
+
   // Auto-detect which room the user is currently standing in
   const userZone = userPos ? (() => {
     for (const shape of floor.shapes) {
@@ -245,44 +264,49 @@ export default function StaffHome() {
   };
 
   const handleZoneTap = useCallback((zoneId: string, zoneLabel: string) => {
+    if (!isSelectingZone) return;
+
     if (blockedIds.includes(zoneId)) {
+      if (Platform.OS === 'web') {
+        window.alert(`"${zoneLabel}" is already marked as hazardous.`);
+        return;
+      }
       Alert.alert('Already Reported', `"${zoneLabel}" is already marked as hazardous.`);
       return;
     }
-    if (!emergency.active) {
-      Alert.alert(
-        'Trigger Emergency?',
-        `Report fire in "${zoneLabel}" and trigger the building-wide alarm?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Confirm & Trigger', style: 'destructive',
-            onPress: async () => {
-              await blockZone(zoneId, zoneLabel, user?.uid ?? 'staff');
-              await triggerEmergency(user?.uid ?? 'staff', `Fire reported in ${zoneLabel}`);
-            },
-          },
-        ],
-      );
-    } else {
-      Alert.alert(
-        'Report Fire Zone',
-        `Mark "${zoneLabel}" as on fire?\n\nEvacuation routes will avoid this area.`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Report Fire Here', style: 'destructive',
-            onPress: () => { blockZone(zoneId, zoneLabel, user?.uid ?? 'staff'); },
-          },
-        ],
-      );
+
+    const confirmMsg = emergency.active
+      ? `Mark "${zoneLabel}" as on fire?\n\nEvacuation routes will avoid this area.`
+      : `Report fire in "${zoneLabel}" and trigger the building-wide alarm?`;
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(confirmMsg)) {
+        blockZone(zoneId, zoneLabel, user?.uid ?? 'staff');
+        if (!emergency.active) triggerEmergency(user?.uid ?? 'staff', `Fire reported in ${zoneLabel}`);
+      }
+      return;
     }
+
+    Alert.alert(
+      emergency.active ? 'Report Fire Zone' : 'Trigger Emergency?',
+      confirmMsg,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: emergency.active ? 'Report Fire Here' : 'Confirm & Trigger',
+          style: 'destructive',
+          onPress: async () => {
+            await blockZone(zoneId, zoneLabel, user?.uid ?? 'staff');
+            if (!emergency.active) await triggerEmergency(user?.uid ?? 'staff', `Fire reported in ${zoneLabel}`);
+          },
+        },
+      ]
+    );
   }, [blockedIds, user, emergency.active]);
 
   const handleSelectZone = () => {
     setModalVisible(false);
-    setShowMapHint(true);
-    setTimeout(() => setShowMapHint(false), 5000);
+    setIsSelectingZone(true);
   };
 
   const toggleFloor = () => {
@@ -293,7 +317,18 @@ export default function StaffHome() {
     posRef.current = null;
   };
 
-  const floor = FLOORS[currentFloor];
+  const handleCall911 = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Dial 911? This will attempt to open your phone or calling app.')) {
+        Linking.openURL('tel:911');
+      }
+      return;
+    }
+    Alert.alert('Dial 911', 'Are you sure you want to call emergency services?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Call 911', style: 'destructive', onPress: () => Linking.openURL('tel:911') },
+    ]);
+  };
 
   return (
     <View style={s.root}>
@@ -335,14 +370,14 @@ export default function StaffHome() {
         </View>
       </SafeAreaView>
 
-      {showMapHint && (
+      {isSelectingZone && (
         <View style={s.hint}>
           <Ionicons name="finger-print-outline" size={14} color="#38bdf8" />
           <Text style={s.hintText}>
-            Tap any room on the map below to report it as a hazard.
+            Tap the hazardous room on the map.
           </Text>
-          <TouchableOpacity onPress={() => setShowMapHint(false)}>
-            <Text style={s.hintCancel}>Dismiss</Text>
+          <TouchableOpacity onPress={() => setIsSelectingZone(false)}>
+            <Text style={s.hintCancel}>Done</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -397,10 +432,7 @@ export default function StaffHome() {
 
         {/* Bottom row: Report Hazard + Call Warden */}
         <View style={s.bottomRow}>
-          <TouchableOpacity
-            style={s.secondaryBtn}
-            onPress={() => setModalVisible(true)}
-          >
+          <TouchableOpacity style={s.secondaryBtn} onPress={() => setModalVisible(true)}>
             <Ionicons
               name="warning-outline"
               size={16}
@@ -411,9 +443,9 @@ export default function StaffHome() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.secondaryBtn}>
-            <Ionicons name="call-outline" size={16} color="#94a3b8" />
-            <Text style={s.secondaryBtnText}>Call Warden</Text>
+          <TouchableOpacity style={s.secondaryBtn} onPress={handleCall911}>
+            <Ionicons name="call" size={16} color="#ef4444" />
+            <Text style={[s.secondaryBtnText, { color: '#ef4444' }]}>Call 911</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -477,7 +509,6 @@ const s = StyleSheet.create({
 
   bottomRow:       { flexDirection: 'row', gap: 8 },
   secondaryBtn:    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#1e293b', paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#334155' },
-  secondaryBtnActive: { backgroundColor: '#1a0505', borderColor: '#7f1d1d' },
   secondaryBtnText:{ color: '#94a3b8', fontSize: 13, fontWeight: '600' },
 });
 

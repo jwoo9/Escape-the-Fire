@@ -39,7 +39,15 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@config-plugins/react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": ["central"],
+          "bluetoothAlwaysPermission": "Allow Escape the Fire to use Bluetooth to find your location in the building during an emergency."
+        }
+      ]
     ],
     "assetBundlePatterns": ["**/*"],
     "experiments": {
