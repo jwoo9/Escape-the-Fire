@@ -35,7 +35,6 @@ interface FloorMapProps {
   blockedZoneIds?: string[];
   isEmergency?:    boolean;
   isAdmin?:        boolean;
-  selectMode?:     boolean;
   onZoneTap?:      (zoneId: string, zoneLabel: string) => void;
 }
 
@@ -209,7 +208,6 @@ export default function FloorMap({
   blockedZoneIds = [],
   isEmergency = false,
   isAdmin = false,
-  selectMode = false,
   onZoneTap,
 }: FloorMapProps) {
   const containerW = SCREEN.width;
@@ -219,46 +217,65 @@ export default function FloorMap({
   const svgNativeH = containerW * (floor.viewBoxH / floor.viewBoxW);
   const svgScale   = svgNativeW / floor.viewBoxW;   // px per SVG unit
 
-  // Fit entire floor on screen initially (a little breathing room)
-  const INIT_S  = Math.min(
+  // Fit entire floor on screen initially
+  const mapContainerH = SCREEN.height * 0.65; // Approximate map viewport height
+  const FIT_S = Math.min(
     containerW / svgNativeW,
-    (SCREEN.height * 0.65) / svgNativeH,
-  ) * 0.88;
-  const MIN_S   = INIT_S * 0.75;
+    mapContainerH / svgNativeH,
+  ) * 0.95; // 0.95 adds a small inner padding so it doesn't touch edges
+  const INIT_S  = FIT_S;
+  const MIN_S   = FIT_S * 0.8;
   const MAX_S   = 4;
+
+  // Strict clamping to lock the map inside the screen boundaries
+  const clampX = (v: number, s: number) => {
+    'worklet';
+    const mapW = svgNativeW * s;
+    const offset = (svgNativeW - mapW) / 2;
+    if (mapW <= containerW) return (containerW - mapW) / 2 - offset; // Center exactly if smaller
+    const visualX = v + offset;
+    return Math.max(containerW - mapW, Math.min(0, visualX)) - offset;
+  };
+  const clampY = (v: number, s: number) => {
+    'worklet';
+    const mapH = svgNativeH * s;
+    const offset = (svgNativeH - mapH) / 2;
+    if (mapH <= mapContainerH) return (mapContainerH - mapH) / 2 - offset; // Center exactly if smaller
+    const visualY = v + offset;
+    return Math.max(mapContainerH - mapH, Math.min(0, visualY)) - offset;
+  };
 
   const focusX  = userPosition?.svgX ?? floor.viewBoxW * 0.5;
   const focusY  = userPosition?.svgY ?? floor.viewBoxH * 0.5;
-  const iTx     = containerW / 2 - focusX * svgScale * INIT_S;
-  const iTy     = (SCREEN.height * 0.55) / 2 - focusY * svgScale * INIT_S;
+  const iTxRaw = containerW / 2 - (focusX * svgScale - svgNativeW / 2) * INIT_S - svgNativeW / 2;
+  const iTyRaw = mapContainerH / 2 - (focusY * svgScale - svgNativeH / 2) * INIT_S - svgNativeH / 2;
+
+  // Lock the map before the first frame even renders
+  const iTx = clampX(iTxRaw, INIT_S);
+  const iTy = clampY(iTyRaw, INIT_S);
 
   const sc  = useSharedValue(INIT_S);
   const tx  = useSharedValue(iTx);
   const ty  = useSharedValue(iTy);
-  const ssc = useSharedValue(INIT_S);
-  const stx = useSharedValue(iTx);
-  const sty = useSharedValue(iTy);
+  
+  // Gesture sync state
+  const savedTx = useSharedValue(iTx);
+  const savedTy = useSharedValue(iTy);
+  const savedScale = useSharedValue(INIT_S);
+  const originFocalX = useSharedValue(0);
+  const originFocalY = useSharedValue(0);
+  const isPinching = useSharedValue(false);
 
-  // Clamp so building can't be panned fully off screen
-  const clampX = (v: number, s: number) => {
-    const mapW = svgNativeW * s;
-    const slack = containerW * 0.28;
-    return Math.max(containerW - mapW - slack, Math.min(slack, v));
-  };
-  const clampY = (v: number, s: number) => {
-    const mapH = svgNativeH * s;
-    const slack = SCREEN.height * 0.28;
-    return Math.max(SCREEN.height - mapH - slack, Math.min(slack, v));
-  };
-
-  // ── Tap state — track whether finger moved (to distinguish tap from pan) ──
-  const tapStart = useRef<{x:number;y:number}|null>(null);
   const [tappedZoneId, setTappedZoneId] = useState<string|null>(null);
 
-  const fireTap = useCallback((ex: number, ey: number) => {
-    if (!selectMode || !onZoneTap) return;
-    const svgX = (ex - tx.value) / (sc.value * svgScale);
-    const svgY = (ey - ty.value) / (sc.value * svgScale);
+  const fireTap = useCallback((ex: number, ey: number, currentTx: number, currentTy: number, currentSc: number) => {
+    if (!onZoneTap) return;
+    
+    const mapX_px = (ex - currentTx - svgNativeW / 2) / currentSc + svgNativeW / 2;
+    const mapY_px = (ey - currentTy - svgNativeH / 2) / currentSc + svgNativeH / 2;
+    const svgX = mapX_px / svgScale;
+    const svgY = mapY_px / svgScale;
+
     for (const shape of floor.shapes) {
       if (pointInPoly(svgX, svgY, shape.points)) {
         setTappedZoneId(shape.id);
@@ -266,44 +283,65 @@ export default function FloorMap({
         return;
       }
     }
-  }, [selectMode, onZoneTap, floor.shapes, svgScale]);
+  }, [onZoneTap, floor.shapes, svgScale, svgNativeW, svgNativeH]);
 
   // ── Gestures ──────────────────────────────────────────────────────────────
-  const pinch = Gesture.Pinch()
-    .onUpdate(e => {
-      sc.value = Math.min(MAX_S, Math.max(MIN_S, ssc.value * e.scale));
+  const pan = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(2)
+    .activeOffsetX([-10, 10]) // Hijack gestures but allow slight finger movements for taps
+    .activeOffsetY([-10, 10])
+    .onStart(() => {
+      if (isPinching.value) return;
+      savedTx.value = tx.value;
+      savedTy.value = ty.value;
     })
-    .onEnd(() => {
-      ssc.value = sc.value;
-      tx.value = clampX(tx.value, sc.value);
-      ty.value = clampY(ty.value, sc.value);
-      stx.value = tx.value;
-      sty.value = ty.value;
+    .onUpdate(e => {
+      if (isPinching.value) return;
+      tx.value = clampX(savedTx.value + e.translationX, sc.value);
+      ty.value = clampY(savedTy.value + e.translationY, sc.value);
     });
 
-  const pan = Gesture.Pan()
-    .minDistance(6)
-    .onUpdate(e => {
-      tx.value = clampX(stx.value + e.translationX, sc.value);
-      ty.value = clampY(sty.value + e.translationY, sc.value);
+  const pinch = Gesture.Pinch()
+    .onStart((e) => {
+      isPinching.value = true;
+      savedScale.value = sc.value;
+      savedTx.value = tx.value;
+      savedTy.value = ty.value;
+      originFocalX.value = e.focalX;
+      originFocalY.value = e.focalY;
+    })
+    .onUpdate((e) => {
+      const nextScale = Math.min(MAX_S, Math.max(MIN_S, savedScale.value * e.scale));
+      
+      // Compensate for center scaling to zoom strictly into the focal point
+      const mapX_offset = (originFocalX.value - savedTx.value - svgNativeW/2) / savedScale.value;
+      const nextTx = e.focalX - mapX_offset * nextScale - svgNativeW/2;
+      
+      const mapY_offset = (originFocalY.value - savedTy.value - svgNativeH/2) / savedScale.value;
+      const nextTy = e.focalY - mapY_offset * nextScale - svgNativeH/2;
+
+      sc.value = nextScale;
+      tx.value = clampX(nextTx, nextScale);
+      ty.value = clampY(nextTy, nextScale);
     })
     .onEnd(() => {
-      stx.value = tx.value;
-      sty.value = ty.value;
+      isPinching.value = false;
+      savedTx.value = tx.value;
+      savedTy.value = ty.value;
     });
 
   // Use a manual tap via onStart/onEnd on a separate Tap gesture
   const tap = Gesture.Tap()
     .maxDuration(300)
+    .maxDistance(20) // Very forgiving tap distance so taps don't fail
     .onEnd((e) => {
-      runOnJS(fireTap)(e.x, e.y);
+      // Pass live values from UI thread to JS thread safely
+      runOnJS(fireTap)(e.x, e.y, tx.value, ty.value, sc.value);
     });
 
-  // Tap runs exclusively — only fires if pan didn't claim the touch
-  const composed = Gesture.Simultaneous(
-    Gesture.Simultaneous(pinch, pan),
-    tap,
-  );
+  // Evaluate all gestures together so panning doesn't swallow the tap
+  const composed = Gesture.Simultaneous(pinch, pan, tap);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
@@ -323,13 +361,11 @@ export default function FloorMap({
   // ── Zone colors ───────────────────────────────────────────────────────────
   const roomFill = (id: string, type: string) => {
     if (blockedZoneIds.includes(id)) return 'rgba(239,68,68,0.35)';
-    if (selectMode) return type === 'room' ? 'rgba(56,189,248,0.18)' : 'rgba(56,189,248,0.08)';
     return type === 'room' ? '#1e3a5f' : '#162032';
   };
 
   const roomStroke = (id: string) => {
     if (blockedZoneIds.includes(id)) return '#ef4444';
-    if (selectMode) return '#38bdf8';
     return '#334155';
   };
 
@@ -338,111 +374,107 @@ export default function FloorMap({
   return (
     <View style={s.container}>
       <GestureDetector gesture={composed}>
-        <Animated.View style={[{ width: svgNativeW, height: svgNativeH }, animStyle]}>
+        <View style={StyleSheet.absoluteFill}>
+          <Animated.View style={[{ width: svgNativeW, height: svgNativeH }, animStyle]}>
 
-          <Svg
-            width={svgNativeW}
-            height={svgNativeH}
-            viewBox={`0 0 ${floor.viewBoxW} ${floor.viewBoxH}`}
-            style={{ position: 'absolute' }}
-          >
-            {/* Dark background */}
-            <Rect
-              width={floor.viewBoxW} height={floor.viewBoxH}
-              fill="#0f172a"
-            />
+            <Svg
+              width={svgNativeW}
+              height={svgNativeH}
+              viewBox={`0 0 ${floor.viewBoxW} ${floor.viewBoxH}`}
+              style={{ position: 'absolute' }}
+            >
+              {/* Dark background */}
+              <Rect
+                width={floor.viewBoxW} height={floor.viewBoxH}
+                fill="#0f172a"
+                stroke="#334155"
+                strokeWidth={8}
+              />
 
-            {/* Room / corridor shapes */}
-            {floor.shapes.map(shape => {
-              const blocked   = blockedZoneIds.includes(shape.id);
-              const pts       = shape.points.map(p => `${p.x},${p.y}`).join(' ');
-              const { cx, cy } = centroid(shape.points);
-              const isRoom    = shape.type === 'room';
+              {/* Room / corridor shapes */}
+              {floor.shapes.map(shape => {
+                const blocked   = blockedZoneIds.includes(shape.id);
+                const pts       = shape.points.map(p => `${p.x},${p.y}`).join(' ');
+                const { cx, cy } = centroid(shape.points);
+                const isRoom    = shape.type === 'room';
 
-              return (
-                <G key={shape.id}>
-                  <Polygon
-                    points={pts}
-                    fill={roomFill(shape.id, shape.type)}
-                    stroke={roomStroke(shape.id)}
-                    strokeWidth={roomStrokeW(shape.id)}
-                  />
-
-                  {/* Room labels — always shown */}
-                  {isRoom && (
-                    <SvgText
-                      x={cx} y={cy + 2.5}
-                      textAnchor="middle"
-                      fontSize={7}
-                      fontWeight="600"
-                      fill={blocked ? '#fca5a5' : selectMode ? '#7dd3fc' : '#94a3b8'}
-                      stroke="rgba(0,0,0,0.4)"
-                      strokeWidth={0.3}
-                    >
-                      {shape.label}
-                    </SvgText>
-                  )}
-
-                  {/* Fire emoji on blocked zones */}
-                  {blocked && (
-                    <SvgText x={cx} y={cy - 9} textAnchor="middle" fontSize={16}>🔥</SvgText>
-                  )}
-
-                  {/* Tap highlight ring in select mode */}
-                  {selectMode && isRoom && (
+                return (
+                  <G key={shape.id}>
                     <Polygon
                       points={pts}
-                      fill="transparent"
-                      stroke="#38bdf8"
-                      strokeWidth={0.5}
-                      strokeDasharray="4,3"
+                      fill={roomFill(shape.id, shape.type)}
+                      stroke={roomStroke(shape.id)}
+                      strokeWidth={roomStrokeW(shape.id)}
+                      onPress={() => onZoneTap?.(shape.id, shape.label)}
                     />
-                  )}
+
+                    {/* Room labels — always shown */}
+                    {isRoom && (
+                      <SvgText
+                        x={cx} y={cy + 2.5}
+                        textAnchor="middle"
+                        fontSize={7}
+                        fontWeight="600"
+                        fill={blocked ? '#fca5a5' : '#94a3b8'}
+                        stroke="rgba(0,0,0,0.4)"
+                        strokeWidth={0.3}
+                        onPress={() => onZoneTap?.(shape.id, shape.label)}
+                      >
+                        {shape.label}
+                      </SvgText>
+                    )}
+
+                    {/* Fire emoji on blocked zones */}
+                    {blocked && (
+                      <SvgText x={cx} y={cy - 9} textAnchor="middle" fontSize={16}>🔥</SvgText>
+                    )}
+
+                  </G>
+                );
+              })}
+
+              {/* Exit markers */}
+              {floor.exits.map(exit => (
+                <G key={exit.id}>
+                  <Circle cx={exit.x} cy={exit.y} r={7} fill="#22c55e" stroke="#fff" strokeWidth={2.5} />
+                  <SvgText x={exit.x} y={exit.y-11} textAnchor="middle" fontSize={6} fontWeight="800"
+                    fill="#ffffff" stroke="rgba(0,0,0,0.4)" strokeWidth={0.3}>
+                    EXIT
+                  </SvgText>
                 </G>
-              );
-            })}
+              ))}
 
-            {/* Exit markers */}
-            {floor.exits.map(exit => (
-              <G key={exit.id}>
-                <Circle cx={exit.x} cy={exit.y} r={7} fill="#22c55e" stroke="#fff" strokeWidth={2.5} />
-                <SvgText x={exit.x} y={exit.y-11} textAnchor="middle" fontSize={6} fontWeight="800"
-                  fill="#ffffff" stroke="rgba(0,0,0,0.4)" strokeWidth={0.3}>
-                  EXIT
-                </SvgText>
-              </G>
-            ))}
+              {/* Evacuation route */}
+              {evacPath.length > 1 && evacPath.slice(0, -1).map((pt, i) => {
+                const next = evacPath[i + 1];
+                return (
+                  <Arrow key={`evac-${i}`}
+                    x1={pt.x} y1={pt.y} x2={next.x} y2={next.y}
+                    color="#38bdf8"
+                  />
+                );
+              })}
 
-            {/* Evacuation route */}
-            {evacPath.length > 1 && evacPath.slice(0, -1).map((pt, i) => {
-              const next = evacPath[i + 1];
-              return (
-                <Arrow key={`evac-${i}`}
-                  x1={pt.x} y1={pt.y} x2={next.x} y2={next.y}
-                  color="#38bdf8"
-                />
-              );
-            })}
+              {/* Staff dots — admin emergency view */}
+              {isAdmin && allStaff.filter(s => s.svgX && s.svgY).map(s => (
+                <G key={s.uid}>
+                  <Circle cx={s.svgX} cy={s.svgY} r={10} fill="#8b5cf6" stroke="#fff" strokeWidth={2.5} />
+                  <SvgText x={s.svgX} y={s.svgY+4} textAnchor="middle" fontSize={6} fontWeight="bold" fill="#fff">
+                    {s.initials}
+                  </SvgText>
+                </G>
+              ))}
+            </Svg>
 
-            {/* Staff dots — admin emergency view */}
-            {isAdmin && allStaff.filter(s => s.svgX && s.svgY).map(s => (
-              <G key={s.uid}>
-                <Circle cx={s.svgX} cy={s.svgY} r={10} fill="#8b5cf6" stroke="#fff" strokeWidth={2.5} />
-                <SvgText x={s.svgX} y={s.svgY+4} textAnchor="middle" fontSize={6} fontWeight="bold" fill="#fff">
-                  {s.initials}
-                </SvgText>
-              </G>
-            ))}
-          </Svg>
+            {/* User position dot */}
+            <UserDot
+              x={displayPos.svgX}
+              y={displayPos.svgY}
+              scale={svgScale}
+            />
 
-          {/* User position dot */}
-          <UserDot
-            x={displayPos.svgX}
-            y={displayPos.svgY}
-            scale={svgScale}
-          />
-
-        </Animated.View>
+          </Animated.View>
+        </View>
       </GestureDetector>
     </View>
   );

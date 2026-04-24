@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../services/auth';
@@ -39,11 +39,18 @@ export default function AdminSettings() {
       { text: 'Sign Out', style: 'destructive', onPress: logout },
     ]);
 
-  const handleClearEmergency = () =>
+  const handleClearEmergency = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Mark All Clear? This will end the emergency for all staff.')) {
+        clearEmergency();
+      }
+      return;
+    }
     Alert.alert('Mark All Clear?', 'This will end the emergency for all staff.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'All Clear', onPress: clearEmergency },
+      { text: 'All Clear', onPress: () => clearEmergency() },
     ]);
+  };
 
   const handleUnblockAll = () =>
     Alert.alert('Unblock All Zones?', `Remove all ${blockedZones.length} blocked zone(s)?`, [

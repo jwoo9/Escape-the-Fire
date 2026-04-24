@@ -24,7 +24,6 @@ export default function StaffMapScreen() {
   const [blockedZones, setBlockedZones] = useState<any[]>([]);
   const [userPos,      setUserPos]      = useState<{ svgX: number; svgY: number } | null>(null);
   const [currentFloor, setCurrentFloor] = useState<FloorId>('main');
-  const [selectMode,   setSelectMode]   = useState(selectZoneMode === '1');
   const [locating,     setLocating]     = useState(true);
 
   const posRef   = useRef<{ svgX: number; svgY: number } | null>(null);
@@ -63,36 +62,35 @@ export default function StaffMapScreen() {
       Alert.alert('Already Reported', `"${zoneLabel}" is already marked as hazardous.`);
       return;
     }
-    if (selectZoneMode === '1') {
+    if (!emergency.active) {
       Alert.alert(
-        'Confirm Hazardous Zone',
-        `Mark "${zoneLabel}" as the fire zone and trigger the emergency alert?`,
+        'Trigger Emergency?',
+        `Report fire in "${zoneLabel}" and trigger the building-wide alarm?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Confirm & Trigger', style: 'destructive',
             onPress: async () => {
-              await blockZone(zoneId, zoneLabel, user!.uid);
-              await triggerEmergency(user!.uid, `Fire reported in ${zoneLabel}`);
-              setSelectMode(false);
+              await blockZone(zoneId, zoneLabel, user?.uid ?? 'staff');
+              await triggerEmergency(user?.uid ?? 'staff', `Fire reported in ${zoneLabel}`);
             },
           },
         ],
       );
-      return;
+    } else {
+      Alert.alert(
+        'Report Fire Zone',
+        `Mark "${zoneLabel}" as on fire?\n\nEvacuation routes will avoid this area.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Report Fire Here', style: 'destructive',
+            onPress: () => { blockZone(zoneId, zoneLabel, user?.uid ?? 'staff'); },
+          },
+        ],
+      );
     }
-    Alert.alert(
-      'Report Fire Zone',
-      `Mark "${zoneLabel}" as on fire?\n\nEvacuation routes will avoid this area.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Report Fire Here', style: 'destructive',
-          onPress: () => { blockZone(zoneId, zoneLabel, user!.uid); setSelectMode(false); },
-        },
-      ],
-    );
-  }, [blockedIds, user, selectZoneMode]);
+  }, [blockedIds, user, emergency.active]);
 
   const toggleFloor = () => {
     const next: FloorId = currentFloor === 'main' ? 'squash' : 'main';
@@ -120,9 +118,7 @@ export default function StaffMapScreen() {
       <View style={s.header}>
         <View>
           <Text style={s.headerTitle}>
-            {selectMode
-              ? (selectZoneMode === '1' ? 'Select Fire Zone' : 'Report Zone')
-              : emergency.active ? 'Evacuation Map' : 'Floor Map'}
+            {emergency.active ? 'Evacuation Map' : 'Floor Map'}
           </Text>
           <Text style={s.headerSub}>{floor.label}</Text>
         </View>
@@ -140,21 +136,6 @@ export default function StaffMapScreen() {
         </View>
       </View>
 
-      {/* Select mode hint */}
-      {selectMode && (
-        <View style={s.hint}>
-          <Ionicons name="finger-print-outline" size={14} color="#38bdf8" />
-          <Text style={s.hintText}>
-            {selectZoneMode === '1'
-              ? 'Tap the fire zone — this will trigger the emergency alert'
-              : 'Tap any room to report it as on fire'}
-          </Text>
-          <TouchableOpacity onPress={() => setSelectMode(false)}>
-            <Text style={s.hintCancel}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* Map — takes all remaining space */}
       <View style={s.mapWrap}>
         <FloorMap
@@ -164,7 +145,6 @@ export default function StaffMapScreen() {
           blockedZoneIds={blockedIds}
           isEmergency={emergency.active}
           isAdmin={false}
-          selectMode={selectMode}
           onZoneTap={handleZoneTap}
         />
       </View>
@@ -194,21 +174,24 @@ export default function StaffMapScreen() {
           )}
         </View>
 
-        {/* Report zone toggle — only show when no emergency yet */}
-        {!emergency.active && (
+        {!emergency.active ? (
           <TouchableOpacity
-            style={[s.reportBtn, selectMode && s.reportBtnActive]}
-            onPress={() => setSelectMode(v => !v)}
+            style={[s.reportBtn, s.reportBtnActive]}
+            onPress={() => {
+              Alert.alert('Trigger Emergency', 'Alert all staff immediately? (You can also tap a room on the map to trigger).', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Trigger Now', style: 'destructive', onPress: () => triggerEmergency(user?.uid ?? 'staff', 'Manual trigger') }
+              ]);
+            }}
           >
-            <Ionicons
-              name={selectMode ? 'close-circle-outline' : 'warning-outline'}
-              size={15}
-              color={selectMode ? '#ef4444' : '#94a3b8'}
-            />
-            <Text style={[s.reportBtnText, selectMode && { color: '#ef4444' }]}>
-              {selectMode ? 'Cancel' : 'Report Zone'}
-            </Text>
+            <Ionicons name="warning" size={16} color="#ef4444" />
+            <Text style={[s.reportBtnText, { color: '#ef4444' }]}>TRIGGER EMERGENCY</Text>
           </TouchableOpacity>
+        ) : (
+          <View style={s.hintContainer}>
+            <Ionicons name="information-circle" size={15} color="#38bdf8" />
+            <Text style={s.hintTextMap}>Tap any room on the map to report a fire zone</Text>
+          </View>
         )}
       </View>
     </View>
@@ -230,9 +213,8 @@ const s = StyleSheet.create({
   pillBtnText:    { color: '#94a3b8', fontSize: 11, fontWeight: '600' },
   locDot:         { width: 6, height: 6, borderRadius: 3 },
 
-  hint:           { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0c1929', paddingHorizontal: 14, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#1e3a5f' },
-  hintText:       { color: '#94a3b8', fontSize: 12, flex: 1 },
-  hintCancel:     { color: '#ef4444', fontSize: 12, fontWeight: '700' },
+  hintContainer:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#0c1929', paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#1e3a5f' },
+  hintTextMap:    { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
 
   mapWrap:        { flex: 1, overflow: 'hidden' },
 

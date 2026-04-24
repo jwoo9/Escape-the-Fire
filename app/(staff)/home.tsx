@@ -40,19 +40,24 @@ import { initLocation, setSimulatedFloor, startTracking, stopTracking } from '..
 type ModalStep = 'ask' | 'confirm' | 'triggering';
 
 function EmergencyModal({
-  visible, onClose, onTriggerNow, onSelectZone,
+  visible, onClose, onTriggerNow, onTriggerWithZone, onSelectZone, userZone
 }: {
   visible: boolean;
   onClose: () => void;
   onTriggerNow: () => Promise<void>;
+  onTriggerWithZone: (zoneId: string, zoneLabel: string) => Promise<void>;
   onSelectZone: () => void;
+  userZone?: { id: string; label: string } | null;
 }) {
   const [step, setStep] = useState<ModalStep>('ask');
-  useEffect(() => { if (visible) setStep('ask'); }, [visible]);
+  const [selectedZ, setSelectedZ] = useState<{id: string, label: string}|null>(null);
+
+  useEffect(() => { if (visible) { setStep('ask'); setSelectedZ(null); } }, [visible]);
 
   const handleTrigger = async () => {
     setStep('triggering');
-    await onTriggerNow();
+    if (selectedZ) await onTriggerWithZone(selectedZ.id, selectedZ.label);
+    else await onTriggerNow();
     onClose();
   };
 
@@ -70,6 +75,19 @@ function EmergencyModal({
               <Text style={m.title}>Report Emergency</Text>
               <Text style={m.body}>This will alert all staff and activate evacuation routing immediately.</Text>
               <Text style={m.question}>Mark a hazardous zone on the map first?</Text>
+
+              {userZone && (
+                <TouchableOpacity style={m.optionBtn} onPress={() => { setSelectedZ(userZone); setStep('confirm'); }}>
+                  <View style={[m.optionIcon, { backgroundColor: '#450a0a' }]}>
+                    <Ionicons name="location-outline" size={18} color="#ef4444" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={m.optionTitle}>Fire is in {userZone.label}</Text>
+                    <Text style={m.optionSub}>Block this room and trigger alarm</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#475569" />
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity style={m.optionBtn} onPress={onSelectZone}>
                 <View style={m.optionIcon}>
@@ -106,7 +124,9 @@ function EmergencyModal({
               </View>
               <Text style={m.title}>Confirm Emergency</Text>
               <Text style={m.body}>
-                This will immediately alert every staff member and activate evacuation mode.
+                {selectedZ
+                  ? `This will block ${selectedZ.label}, alert all staff, and activate evacuation mode.`
+                  : 'This will immediately alert every staff member and activate evacuation mode.'}
               </Text>
               <TouchableOpacity style={m.triggerBtn} onPress={handleTrigger}>
                 <Ionicons name="warning" size={16} color="#fff" />
@@ -143,9 +163,8 @@ export default function StaffHome() {
   const [userPos,      setUserPos]      = useState<{ svgX: number; svgY: number } | null>(null);
   const [currentFloor, setCurrentFloor] = useState<FloorId>('main');
   const [locating,     setLocating]     = useState(true);
-  const [selectMode,   setSelectMode]   = useState(false);
-  const [selectForEmergency, setSelectForEmergency] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [showMapHint,  setShowMapHint]  = useState(false);
   const [checkedIn,    setCheckedIn]    = useState(false);
   const [checkingIn,   setCheckingIn]   = useState(false);
 
@@ -198,12 +217,25 @@ export default function StaffHome() {
   const totalStaff  = Object.keys(allLocations).length;
   const hazardCount = blockedIds.length;
 
+  // Auto-detect which room the user is currently standing in
+  const userZone = userPos ? (() => {
+    for (const shape of floor.shapes) {
+      let inside = false;
+      for (let i = 0, j = shape.points.length - 1; i < shape.points.length; j = i++) {
+        const xi = shape.points[i].x, yi = shape.points[i].y, xj = shape.points[j].x, yj = shape.points[j].y;
+        if ((yi > userPos.svgY) !== (yj > userPos.svgY) && userPos.svgX < ((xj - xi) * (userPos.svgY - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      if (inside && shape.type === 'room') return { id: shape.id, label: shape.label };
+    }
+    return null;
+  })() : null;
+
   // Safe check-in
   const handleCheckIn = async () => {
     if (checkedIn || checkingIn) return;
     setCheckingIn(true);
     try {
-      await checkInSafe(user!.uid, user?.displayName ?? user?.email ?? 'Staff');
+      await checkInSafe(user?.uid ?? 'unknown', user?.displayName ?? user?.email ?? 'Staff');
       setCheckedIn(true);
     } catch (e) {
       Alert.alert('Error', 'Could not check in. Please try again.');
@@ -212,25 +244,22 @@ export default function StaffHome() {
     }
   };
 
-  // Zone tap — if selectForEmergency, block zone AND trigger; otherwise just block
   const handleZoneTap = useCallback((zoneId: string, zoneLabel: string) => {
     if (blockedIds.includes(zoneId)) {
       Alert.alert('Already Reported', `"${zoneLabel}" is already marked as hazardous.`);
       return;
     }
-    if (selectForEmergency) {
+    if (!emergency.active) {
       Alert.alert(
-        'Confirm Hazardous Zone',
-        `Mark "${zoneLabel}" as the fire zone and trigger the emergency?`,
+        'Trigger Emergency?',
+        `Report fire in "${zoneLabel}" and trigger the building-wide alarm?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Confirm & Trigger', style: 'destructive',
             onPress: async () => {
-              await blockZone(zoneId, zoneLabel, user!.uid);
-              await triggerEmergency(user!.uid, `Fire reported in ${zoneLabel}`);
-              setSelectMode(false);
-              setSelectForEmergency(false);
+              await blockZone(zoneId, zoneLabel, user?.uid ?? 'staff');
+              await triggerEmergency(user?.uid ?? 'staff', `Fire reported in ${zoneLabel}`);
             },
           },
         ],
@@ -243,18 +272,17 @@ export default function StaffHome() {
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Report Fire Here', style: 'destructive',
-            onPress: () => { blockZone(zoneId, zoneLabel, user!.uid); setSelectMode(false); },
+            onPress: () => { blockZone(zoneId, zoneLabel, user?.uid ?? 'staff'); },
           },
         ],
       );
     }
-  }, [blockedIds, user, selectForEmergency]);
+  }, [blockedIds, user, emergency.active]);
 
-  // "Select Zone on Map" from modal — enable select mode tied to emergency trigger
   const handleSelectZone = () => {
     setModalVisible(false);
-    setSelectForEmergency(true);
-    setSelectMode(true);
+    setShowMapHint(true);
+    setTimeout(() => setShowMapHint(false), 5000);
   };
 
   const toggleFloor = () => {
@@ -284,9 +312,7 @@ export default function StaffHome() {
         <View style={s.header}>
           <View>
             <Text style={s.headerTitle}>
-              {selectMode
-                ? (selectForEmergency ? 'Tap the Fire Zone' : 'Tap to Report')
-                : emergency.active ? 'Evacuation Map' : 'Floor Map'}
+            {emergency.active ? 'Evacuation Map' : 'Floor Map'}
             </Text>
             <Text style={s.headerSub}>{floor.label}</Text>
           </View>
@@ -309,17 +335,14 @@ export default function StaffHome() {
         </View>
       </SafeAreaView>
 
-      {/* ── Select mode hint ── */}
-      {selectMode && (
+      {showMapHint && (
         <View style={s.hint}>
           <Ionicons name="finger-print-outline" size={14} color="#38bdf8" />
           <Text style={s.hintText}>
-            {selectForEmergency
-              ? 'Tap the room where the fire is — this will trigger the alert'
-              : 'Tap any room to report it as a hazard'}
+            Tap any room on the map below to report it as a hazard.
           </Text>
-          <TouchableOpacity onPress={() => { setSelectMode(false); setSelectForEmergency(false); }}>
-            <Text style={s.hintCancel}>Cancel</Text>
+          <TouchableOpacity onPress={() => setShowMapHint(false)}>
+            <Text style={s.hintCancel}>Dismiss</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -333,7 +356,6 @@ export default function StaffHome() {
           blockedZoneIds={blockedIds}
           isEmergency={emergency.active}
           isAdmin={false}
-          selectMode={selectMode}
           onZoneTap={handleZoneTap}
         />
       </View>
@@ -376,19 +398,16 @@ export default function StaffHome() {
         {/* Bottom row: Report Hazard + Call Warden */}
         <View style={s.bottomRow}>
           <TouchableOpacity
-            style={[s.secondaryBtn, selectMode && s.secondaryBtnActive]}
-            onPress={() => {
-              if (selectMode) { setSelectMode(false); setSelectForEmergency(false); }
-              else setModalVisible(true);
-            }}
+            style={s.secondaryBtn}
+            onPress={() => setModalVisible(true)}
           >
             <Ionicons
-              name={selectMode ? 'close-circle-outline' : 'warning-outline'}
+              name="warning-outline"
               size={16}
-              color={selectMode ? '#ef4444' : '#94a3b8'}
+              color="#94a3b8"
             />
-            <Text style={[s.secondaryBtnText, selectMode && { color: '#ef4444' }]}>
-              {selectMode ? 'Cancel' : 'Report Hazard'}
+            <Text style={s.secondaryBtnText}>
+              Report Hazard
             </Text>
           </TouchableOpacity>
 
@@ -402,8 +421,13 @@ export default function StaffHome() {
       <EmergencyModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
+        userZone={userZone}
+        onTriggerWithZone={async (zid, zlabel) => {
+          await blockZone(zid, zlabel, user?.uid ?? 'staff');
+          await triggerEmergency(user?.uid ?? 'staff', `Fire reported in ${zlabel}`);
+        }}
         onTriggerNow={async () => {
-          await triggerEmergency(user!.uid, 'Manual trigger from staff — no zone specified');
+          await triggerEmergency(user?.uid ?? 'staff', 'Manual trigger from staff — no zone specified');
         }}
         onSelectZone={handleSelectZone}
       />

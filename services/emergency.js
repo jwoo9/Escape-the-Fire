@@ -28,10 +28,26 @@ export const triggerEmergency = async (reportedBy, note = '') => {
 
 // Clear the emergency
 export const clearEmergency = async () => {
-  await setDoc(doc(db, 'emergencies', 'current'), {
-    active: false,
-    clearedAt: serverTimestamp(),
-  });
+  try {
+    // 1. Mark the emergency as inactive safely
+    await setDoc(doc(db, 'emergencies', 'current'), {
+      active: false,
+      clearedAt: serverTimestamp(),
+    }, { merge: true });
+
+    // 2. Fetch and delete all blocked fire zones so the map resets
+    const blockedSnap = await getDocs(collection(db, 'blockedZones'));
+    const deleteZones = blockedSnap.docs.map(d => deleteDoc(d.ref));
+
+    // 3. Fetch and delete all safe check-ins so staff can check in next time
+    const safeSnap = await getDocs(collection(db, 'safeCheckIns'));
+    const deleteSafe = safeSnap.docs.map(d => deleteDoc(d.ref));
+
+    // Execute all deletions at once
+    await Promise.all([...deleteZones, ...deleteSafe]);
+  } catch (error) {
+    console.error('Error clearing emergency: ', error);
+  }
 };
 
 // Mark a zone (room/corridor id from map data) as blocked / on fire

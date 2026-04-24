@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert, Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,9 +20,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FLOORS } from '../../constants/mapData';
 import { useAuth } from '../../context/AuthContext';
 import { createStaffAccount, deactivateStaff, logout, reactivateStaff } from '../../services/auth';
 import {
+  blockZone,
   clearEmergency,
   subscribeBlockedZones,
   subscribeEmergency,
@@ -231,11 +234,18 @@ export default function AdminHome() {
   const activeStaff  = staff.filter(s => s?.active);
   const trackedStaff = activeStaff.filter(s => locations[s.uid]);
 
-  const handleClear = () =>
+  const handleClear = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Mark All Clear? This will end the emergency for all staff.')) {
+        clearEmergency();
+      }
+      return;
+    }
     Alert.alert('Mark All Clear?', 'This will end the emergency for all staff.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'All Clear', onPress: clearEmergency },
+      { text: 'All Clear', onPress: () => clearEmergency() },
     ]);
+  };
 
   const handleDeactivate = (m: any) =>
     Alert.alert('Deactivate', `Remove ${m.name}'s access?`, [
@@ -419,14 +429,9 @@ export default function AdminHome() {
         {/* ── Zones tab ── */}
         {tab === 'zones' && (
           <>
-            <View style={s.hintCard}>
-              <Ionicons name="information-circle-outline" size={16} color="#38bdf8" />
-              <Text style={s.hintText}>
-                To block a zone, go to the Map tab, tap "Report Zone", then tap the area on the map.
-              </Text>
-            </View>
+            <Text style={s.sectionTitle}>Currently Blocked</Text>
             {blockedZones.length === 0
-              ? <Text style={s.empty}>No zones currently blocked</Text>
+              ? <Text style={s.empty}>None</Text>
               : blockedZones.map(z => (
                 <View key={z.zoneId} style={s.zoneRow}>
                   <Ionicons name="flame" size={18} color="#ef4444" />
@@ -439,6 +444,23 @@ export default function AdminHome() {
                   </TouchableOpacity>
                 </View>
               ))}
+
+            <Text style={[s.sectionTitle, { marginTop: 16 }]}>All Main Floor Rooms</Text>
+            {FLOORS.main.shapes.filter(s => s.type === 'room').map(z => {
+              const isBlocked = blockedZones.some(bz => bz.zoneId === z.id);
+              if (isBlocked) return null;
+              return (
+                <View key={z.id} style={[s.staffRow, { paddingVertical: 10, marginTop: 8 }]}>
+                  <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.staffName}>{z.label}</Text>
+                  </View>
+                  <TouchableOpacity style={s.deactivateBtn} onPress={() => blockZone(z.id, z.label, user?.uid ?? 'admin')}>
+                    <Text style={s.deactivateText}>Block</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -447,8 +469,8 @@ export default function AdminHome() {
       <EmergencyModal
         visible={showEmergency}
         onClose={() => setShowEmergency(false)}
-        onTriggerNow={async () => { await triggerEmergency(user!.uid, 'Manual trigger from admin'); }}
-        onGoToMap={() => { setShowEmergency(false); router.push({ pathname: '/(admin)/map', params: { selectZoneMode: '1' } }); }}
+        onTriggerNow={async () => { await triggerEmergency(user?.uid ?? 'admin', 'Manual trigger from admin'); }}
+        onGoToMap={() => { setShowEmergency(false); router.push('/(admin)/map'); }}
       />
     </View>
   );
@@ -492,8 +514,8 @@ const s = StyleSheet.create({
   sectionTitle:   { fontSize: 10, fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 },
   empty:          { color: '#334155', fontSize: 14, textAlign: 'center', marginTop: 8, paddingVertical: 16 },
 
-  actionGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionBtn:      { width: '47%', backgroundColor: '#1e293b', borderRadius: 14, padding: 14, gap: 10, borderWidth: 1, borderColor: '#334155' },
+  actionGrid:     { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
+  actionBtn:      { width: '48%', backgroundColor: '#1e293b', borderRadius: 14, padding: 14, gap: 10, borderWidth: 1, borderColor: '#334155' },
   actionIconBox:  { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   actionLabel:    { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
 

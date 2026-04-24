@@ -6,7 +6,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import FloorMap from '../../components/FloorMap';
@@ -14,6 +14,7 @@ import { FLOORS, FloorId } from '../../constants/mapData';
 import { useAuth } from '../../context/AuthContext';
 import {
   blockZone,
+  clearEmergency,
   subscribeBlockedZones,
   subscribeEmergency,
   subscribeLocations,
@@ -32,7 +33,6 @@ export default function AdminMapScreen() {
   const [allLocations, setAllLocations] = useState<Record<string, any>>({});
   const [userPos,      setUserPos]      = useState<{ svgX: number; svgY: number } | null>(null);
   const [currentFloor, setCurrentFloor] = useState<FloorId>('main');
-  const [selectMode,   setSelectMode]   = useState(selectZoneMode === '1');
   const [locating,     setLocating]     = useState(true);
 
   const posRef = useRef<{ svgX: number; svgY: number } | null>(null);
@@ -102,39 +102,35 @@ export default function AdminMapScreen() {
       return;
     }
 
-    // Arrived from emergency modal — block zone AND trigger emergency together
-    if (selectZoneMode === '1') {
+    if (!emergency.active) {
       Alert.alert(
-        'Confirm Hazardous Zone',
-        `Mark "${zoneLabel}" as the fire zone and trigger the emergency alert?`,
+        'Trigger Emergency?',
+        `Report fire in "${zoneLabel}" and trigger the building-wide alarm?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Confirm & Trigger', style: 'destructive',
             onPress: async () => {
-              await blockZone(zoneId, zoneLabel, user!.uid);
-              await triggerEmergency(user!.uid, `Fire reported in ${zoneLabel}`);
-              setSelectMode(false);
+              await blockZone(zoneId, zoneLabel, user?.uid ?? 'admin');
+              await triggerEmergency(user?.uid ?? 'admin', `Fire reported in ${zoneLabel}`);
             },
           },
         ],
       );
-      return;
+    } else {
+      Alert.alert(
+        'Block Zone',
+        `Mark "${zoneLabel}" as hazardous?\n\nStaff will be routed around this area.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Block Zone', style: 'destructive',
+            onPress: () => { blockZone(zoneId, zoneLabel, user?.uid ?? 'admin'); },
+          },
+        ],
+      );
     }
-
-    // Normal block-zone mode
-    Alert.alert(
-      'Block Zone',
-      `Mark "${zoneLabel}" as hazardous?\n\nStaff will be routed around this area.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block Zone', style: 'destructive',
-          onPress: () => { blockZone(zoneId, zoneLabel, user!.uid); setSelectMode(false); },
-        },
-      ],
-    );
-  }, [blockedIds, currentFloor, user, selectZoneMode]);
+  }, [blockedIds, currentFloor, user, emergency.active]);
 
   const toggleFloor = () => {
     const next: FloorId = currentFloor === 'main' ? 'squash' : 'main';
@@ -164,9 +160,7 @@ export default function AdminMapScreen() {
       <View style={s.header}>
         <View>
           <Text style={s.headerTitle}>
-            {selectMode
-              ? (selectZoneMode === '1' ? 'Select Fire Zone' : 'Block Zone')
-              : emergency.active ? 'Live Staff Map' : 'Floor Map'}
+            {emergency.active ? 'Live Staff Map' : 'Floor Map'}
           </Text>
           <Text style={s.headerSub}>{floor.label}</Text>
         </View>
@@ -187,32 +181,47 @@ export default function AdminMapScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[s.actionBtn, selectMode && s.actionBtnActive]}
-          onPress={() => setSelectMode(v => !v)}
-        >
-          <Ionicons
-            name={selectMode ? 'close-circle' : 'ban-outline'}
-            size={16}
-            color={selectMode ? '#ef4444' : '#94a3b8'}
-          />
-          <Text style={[s.actionBtnText, selectMode && { color: '#ef4444' }]}>
-            {selectMode ? 'Cancel' : 'Block Zone'}
-          </Text>
-        </TouchableOpacity>
+        {!emergency.active ? (
+          <TouchableOpacity
+            style={[s.actionBtn, s.actionBtnActive]}
+            onPress={() => {
+              Alert.alert('Trigger Emergency', 'Alert all staff immediately? (You can also tap a room on the map to trigger).', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Trigger Now', style: 'destructive', onPress: () => triggerEmergency(user?.uid ?? 'admin', 'Manual trigger') }
+              ]);
+            }}
+          >
+            <Ionicons name="warning" size={16} color="#ef4444" />
+            <Text style={[s.actionBtnText, { color: '#ef4444' }]}>Trigger Alarm</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[s.actionBtn, s.actionBtnClear]}
+            onPress={() => {
+              if (Platform.OS === 'web') {
+                if (window.confirm('Mark All Clear? This will end the emergency for all staff.')) {
+                  clearEmergency();
+                }
+                return;
+              }
+              Alert.alert('Mark All Clear?', 'This will end the emergency for all staff.', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'All Clear', onPress: () => clearEmergency() },
+              ]);
+            }}
+          >
+            <Ionicons name="checkmark-circle-outline" size={16} color="#22c55e" />
+            <Text style={[s.actionBtnText, { color: '#22c55e' }]}>All Clear</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Select mode hint */}
-      {selectMode && (
-        <View style={s.hint}>
-          <Ionicons name="finger-print-outline" size={14} color="#38bdf8" />
-          <Text style={s.hintText}>
-            {selectZoneMode === '1'
-              ? 'Tap the fire zone — this will trigger the emergency alert'
-              : 'Tap a zone to block it. Tap a blocked zone to unblock.'}
-          </Text>
-        </View>
-      )}
+      <View style={s.hint}>
+        <Ionicons name="information-circle-outline" size={14} color="#38bdf8" />
+        <Text style={s.hintText}>
+          Tap any room on the map to block or unblock it.
+        </Text>
+      </View>
 
       {/* Map */}
       <View style={s.mapWrap}>
@@ -223,7 +232,6 @@ export default function AdminMapScreen() {
           blockedZoneIds={blockedIds}
           isEmergency={emergency.active}
           isAdmin={true}
-          selectMode={selectMode}
           onZoneTap={handleZoneTap}
         />
       </View>
@@ -275,6 +283,7 @@ const s = StyleSheet.create({
   actionBar:       { flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 8, backgroundColor: '#0f172a', borderBottomWidth: 1, borderBottomColor: '#1e293b', gap: 8 },
   actionBtn:       { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#1e293b', paddingVertical: 9, borderRadius: 10, borderWidth: 1, borderColor: '#334155' },
   actionBtnActive: { backgroundColor: '#1a0505', borderColor: '#7f1d1d' },
+  actionBtnClear:  { borderColor: '#14532d', backgroundColor: '#052e16' },
   actionBtnText:   { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
 
   hint:            { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0c1929', borderBottomWidth: 1, borderBottomColor: '#1e3a5f', paddingHorizontal: 16, paddingVertical: 9 },

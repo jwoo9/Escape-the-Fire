@@ -56,6 +56,9 @@ window.addEventListener('DOMContentLoaded', () => {
   canvas = document.getElementById('mapCanvas');
   context    = canvas.getContext('2d');
 
+  // Use a custom white crosshair so it's clearly visible on dark backgrounds
+  canvas.style.cursor = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Cpath d='M10,0 L10,20 M0,10 L20,10' stroke='white' stroke-width='2'/%3E%3C/svg%3E\") 10 10, crosshair";
+
   canvas.addEventListener('mousemove', onMouseMove);
   canvas.addEventListener('mouseleave', onMouseLeave);
   window.addEventListener('keydown', onKeyDown);

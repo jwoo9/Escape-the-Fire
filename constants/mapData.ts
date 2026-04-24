@@ -78,59 +78,74 @@ const MAIN_BEACONS: MapBeacon[] = [
 ];
 
 const MAIN_NAV: NavNode[] = [
-  // Bottom strip rooms → corridor_2
-  {id:"n_r1",    x:282, y:379, neighbors:["n_r2","n_c4w"]},
-  {id:"n_r2",    x:209, y:379, neighbors:["n_r1","n_r3","n_c2e"]},
-  {id:"n_r3",    x:136, y:379, neighbors:["n_r2","n_r4","n_c2w"]},
-  {id:"n_r4",    x:64,  y:379, neighbors:["n_r3","n_c2w"]},
-  {id:"n_r5",    x:45,  y:283, neighbors:["n_c2w"]},
-  {id:"n_r6",    x:136, y:260, neighbors:["n_c2w","n_c2e"]},
-  // Corridor 2
-  {id:"n_c2w",   x:82,  y:318, neighbors:["n_r3","n_r4","n_r5","n_r6","n_c2e"]},
-  {id:"n_c2e",   x:203, y:318, neighbors:["n_c2w","n_r2","n_r6","n_c1","n_c3"]},
-  // Corridor 1 + Exit 8
-  {id:"n_c1",    x:211, y:283, neighbors:["n_c2e","n_exit8","n_c3"]},
-  {id:"n_exit8", x:211, y:224, neighbors:["n_c1"]},
-  // Rooms 7, 8
-  {id:"n_r7",    x:254, y:265, neighbors:["n_c2e","n_c3"]},
-  {id:"n_r8",    x:315, y:265, neighbors:["n_c3","n_c4w"]},
-  // Corridor 3
-  {id:"n_c3",    x:269, y:324, neighbors:["n_c2e","n_r7","n_r8","n_c4w","n_c1"]},
-  // Corridor 4 (backbone)
-  {id:"n_c4w",   x:350, y:362, neighbors:["n_c3","n_r1","n_r8","n_c4m","n_r11","n_exit1","n_exit2"]},
-  {id:"n_c4m",   x:406, y:362, neighbors:["n_c4w","n_c4e","n_r9","n_exit4"]},
-  {id:"n_c4e",   x:478, y:362, neighbors:["n_c4m","n_c5","n_r15"]},
-  {id:"n_r9",    x:400, y:260, neighbors:["n_c4m","n_c5"]},
-  // Corridor 5
-  {id:"n_c5",    x:478, y:258, neighbors:["n_c4e","n_r9","n_r10","n_c7","n_r13"]},
-  // Exits 1,2,4
-  {id:"n_exit1", x:362, y:133, neighbors:["n_c4w"]},
-  {id:"n_exit2", x:369, y:165, neighbors:["n_c4w"]},
-  {id:"n_exit4", x:394, y:194, neighbors:["n_c4m"]},
-  // Corridor 6 (upper diagonal)
-  {id:"n_c6a",   x:425, y:150, neighbors:["n_c4w","n_r11","n_c6b"]},
-  {id:"n_c6b",   x:590, y:122, neighbors:["n_c6a","n_r20","n_rm"]},
-  {id:"n_r11",   x:427, y:110, neighbors:["n_c4w","n_c6a"]},
-  {id:"n_r20",   x:560, y:68,  neighbors:["n_c6b","n_rm"]},
-  // Rooms 10,13,14,15
-  {id:"n_r10",   x:527, y:222, neighbors:["n_c5","n_r13"]},
-  {id:"n_r13",   x:527, y:272, neighbors:["n_r10","n_c5","n_r14"]},
-  {id:"n_r14",   x:584, y:251, neighbors:["n_r13","n_rm"]},
-  {id:"n_r15",   x:527, y:381, neighbors:["n_c4e","n_c7"]},
-  // Corridor 7
-  {id:"n_c7",    x:527, y:325, neighbors:["n_c5","n_r15","n_rm"]},
-  // Main corridor junction
-  {id:"n_rm",    x:609, y:213, neighbors:["n_c7","n_r14","n_c6b","n_r20","n_r22","n_exit5","n_r16"]},
-  {id:"n_r22",   x:635, y:173, neighbors:["n_rm","n_exit5"]},
-  {id:"n_exit5", x:662, y:168, neighbors:["n_rm","n_r22"]},
-  // Diagonal chain rooms 16-19 → gym
-  {id:"n_r16",   x:636, y:310, neighbors:["n_rm","n_r17"]},
-  {id:"n_r17",   x:690, y:352, neighbors:["n_r16","n_r18"]},
-  {id:"n_r18",   x:740, y:395, neighbors:["n_r17","n_r19"]},
-  {id:"n_r19",   x:786, y:438, neighbors:["n_r18","n_gym"]},
-  {id:"n_gym",   x:855, y:260, neighbors:["n_r19","n_exit6","n_exit7"]},
-  {id:"n_exit6", x:898, y:453, neighbors:["n_gym"]},
-  {id:"n_exit7", x:1033,y:280, neighbors:["n_gym"]},
+  // ── Rooms 1-4 bottom row — corridor_4 south edge (y≈416) then up to corridor spine ──
+  {id:"n_r1",      x:282, y:388, neighbors:["n_r1_c",  "n_c4w"]},
+  {id:"n_r1_c",    x:282, y:416, neighbors:["n_r1"]},
+  {id:"n_r2",      x:209, y:388, neighbors:["n_r2_c",  "n_c4w","n_c2e"]},
+  {id:"n_r2_c",    x:209, y:416, neighbors:["n_r2"]},
+  {id:"n_r3",      x:136, y:388, neighbors:["n_r3_c",  "n_c2w","n_c2e"]},
+  {id:"n_r3_c",    x:136, y:416, neighbors:["n_r3"]},
+  {id:"n_r4",      x:64,  y:388, neighbors:["n_r4_c",  "n_c2w"]},
+  {id:"n_r4_c",    x:64,  y:416, neighbors:["n_r4"]},
+  // Room 5 — west side of corridor_2
+  {id:"n_r5",      x:42,  y:293, neighbors:["n_c2w"]},
+  // Room 6 — opens south into corridor_2
+  {id:"n_r6",      x:142, y:294, neighbors:["n_c2e","n_c2w"]},
+  // ── Corridor 2 (horizontal, y≈318) ──
+  {id:"n_c2w",     x:82,  y:318, neighbors:["n_r3","n_r4","n_r5","n_r6","n_c2e"]},
+  {id:"n_c2e",     x:203, y:318, neighbors:["n_c2w","n_r2","n_r3","n_r6","n_c2e_n","n_c3w"]},
+  {id:"n_c2e_n",   x:203, y:294, neighbors:["n_c2e","n_exit8","n_c1n","n_c3w"]},
+  // ── Corridor 1 (vertical) + Exit 8 ──
+  {id:"n_c1n",     x:211, y:260, neighbors:["n_c2e_n","n_exit8","n_c3w"]},
+  {id:"n_exit8",   x:211, y:224, neighbors:["n_c1n"]},
+  // ── Rooms 7 & 8 open south into corridor 1/3 ──
+  {id:"n_r7",      x:254, y:265, neighbors:["n_c1n","n_c3w"]},
+  {id:"n_r8",      x:315, y:265, neighbors:["n_c3e","n_c3w"]},
+  // ── Corridor 3 (horizontal, y≈324) ──
+  {id:"n_c3w",     x:240, y:324, neighbors:["n_c2e","n_c2e_n","n_c1n","n_r7","n_c3e"]},
+  {id:"n_c3e",     x:318, y:324, neighbors:["n_c3w","n_r8","n_c4w"]},
+  // ── Corridor 4 spine (horizontal, y≈362) ──
+  {id:"n_c4w",     x:350, y:362, neighbors:["n_c3e","n_r1","n_r2","n_c4m","n_c6bot"]},
+  {id:"n_c4m",     x:406, y:362, neighbors:["n_c4w","n_c4e","n_exit4","n_c6bot"]},
+  {id:"n_c4e",     x:478, y:362, neighbors:["n_c4m","n_r15","n_c5s"]},
+  // ── Exits 1, 2 — reached via corridor_6 north branch ──
+  {id:"n_exit1",   x:362, y:133, neighbors:["n_c6top"]},
+  {id:"n_exit2",   x:369, y:165, neighbors:["n_c6top"]},
+  // ── Exit 4 — mid-corridor_6 ──
+  {id:"n_exit4",   x:394, y:194, neighbors:["n_c4m","n_c6bot"]},
+  // ── Corridor 6 (diagonal, north face of building) ──
+  {id:"n_c6bot",   x:420, y:175, neighbors:["n_c4w","n_c4m","n_exit4","n_c6mid","n_r11d"]},
+  {id:"n_r11d",    x:430, y:130, neighbors:["n_c6bot"]},
+  {id:"n_c6mid",   x:510, y:140, neighbors:["n_c6bot","n_c6top","n_r20d"]},
+  {id:"n_r20d",    x:555, y:80,  neighbors:["n_c6mid"]},
+  {id:"n_c6top",   x:590, y:160, neighbors:["n_c6mid","n_rmn","n_exit1","n_exit2","n_exit5","n_r22d"]},
+  // ── Room 22 + Exit 5 ──
+  {id:"n_r22d",    x:637, y:172, neighbors:["n_c6top","n_exit5","n_rmn"]},
+  {id:"n_exit5",   x:662, y:168, neighbors:["n_r22d","n_c6top"]},
+  // ── Corridor 5 (vertical stub, x≈478) ──
+  {id:"n_c5s",     x:478, y:310, neighbors:["n_c4e","n_c5n","n_c7s"]},
+  {id:"n_c5n",     x:478, y:258, neighbors:["n_c5s","n_r10d","n_r13d","n_c7n"]},
+  // ── Rooms 10, 13, 14 ──
+  {id:"n_r10d",    x:527, y:222, neighbors:["n_c5n"]},
+  {id:"n_r13d",    x:527, y:275, neighbors:["n_c5n","n_c7n","n_r14d"]},
+  {id:"n_r14d",    x:578, y:258, neighbors:["n_r13d","n_rms"]},
+  // ── Room 15 ──
+  {id:"n_r15",     x:527, y:381, neighbors:["n_c4e","n_c5s","n_c7s"]},
+  // ── Corridor 7 (diagonal connection c5→main corridor) ──
+  {id:"n_c7s",     x:530, y:340, neighbors:["n_c5s","n_r15","n_c7n"]},
+  {id:"n_c7n",     x:562, y:308, neighbors:["n_c7s","n_c5n","n_r13d","n_rms"]},
+  // ── Main corridor (large diagonal) — two waypoints ──
+  {id:"n_rms",     x:622, y:272, neighbors:["n_c7n","n_r14d","n_rmn","n_r16d"]},
+  {id:"n_rmn",     x:609, y:213, neighbors:["n_rms","n_c6top","n_r22d","n_exit5"]},
+  // ── Rooms 16-19 chain + gym ──
+  {id:"n_r16d",    x:655, y:310, neighbors:["n_rms","n_mc1"]},
+  {id:"n_mc1",     x:710, y:355, neighbors:["n_r16d","n_mc2"]},
+  {id:"n_mc2",     x:762, y:400, neighbors:["n_mc1","n_mc3"]},
+  {id:"n_mc3",     x:810, y:445, neighbors:["n_mc2","n_exit6","n_gymj"]},
+  {id:"n_gymj",    x:870, y:390, neighbors:["n_mc3","n_gymc","n_exit6"]},
+  {id:"n_gymc",    x:875, y:285, neighbors:["n_gymj","n_exit7"]},
+  {id:"n_exit6",   x:898, y:453, neighbors:["n_mc3","n_gymj"]},
+  {id:"n_exit7",   x:1033,y:280, neighbors:["n_gymc"]},
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -173,56 +188,101 @@ const SQUASH_BEACONS: MapBeacon[] = [
 ];
 
 const SQUASH_NAV: NavNode[] = [
-  {id:"sq_r1",    x:42,  y:278, neighbors:["sq_c2w","sq_exit3"]},
-  {id:"sq_r2",    x:54,  y:371, neighbors:["sq_r1","sq_exit3"]},
-  {id:"sq_exit3", x:56,  y:408, neighbors:["sq_r2","sq_r1"]},
-  {id:"sq_r5",    x:95,  y:376, neighbors:["sq_c2w"]},
-  {id:"sq_c2w",   x:108, y:377, neighbors:["sq_r1","sq_r5","sq_c2m","sq_exit4"]},
-  {id:"sq_exit4", x:199, y:409, neighbors:["sq_c2w","sq_c1"]},
-  {id:"sq_c1",    x:197, y:283, neighbors:["sq_c2w","sq_exit4","sq_c2m","sq_r3","sq_r4","sq_r6","sq_r7"]},
-  {id:"sq_r3",    x:129, y:253, neighbors:["sq_c1","sq_c2w"]},
-  {id:"sq_r4",    x:129, y:316, neighbors:["sq_c1"]},
-  {id:"sq_r6",    x:266, y:252, neighbors:["sq_c1","sq_c2m"]},
-  {id:"sq_r7",    x:266, y:315, neighbors:["sq_c1","sq_c2m"]},
-  {id:"sq_c2m",   x:313, y:376, neighbors:["sq_c1","sq_r6","sq_r7","sq_c3n","sq_r8","sq_r10"]},
-  {id:"sq_r8",    x:342, y:250, neighbors:["sq_c2m","sq_c3"]},
-  {id:"sq_r10",   x:357, y:318, neighbors:["sq_c2m","sq_c3n"]},
-  {id:"sq_c3",    x:430, y:249, neighbors:["sq_c2m","sq_r8","sq_r11","sq_r12","sq_r13","sq_r14","sq_r9","sq_r16"]},
-  {id:"sq_c3n",   x:400, y:382, neighbors:["sq_c2m","sq_r10","sq_exit5"]},
-  {id:"sq_r9",    x:449, y:249, neighbors:["sq_c3","sq_r14"]},
-  {id:"sq_r11",   x:416, y:288, neighbors:["sq_c3"]},
-  {id:"sq_r12",   x:416, y:310, neighbors:["sq_c3"]},
-  {id:"sq_r13",   x:416, y:340, neighbors:["sq_c3"]},
-  {id:"sq_r14",   x:491, y:318, neighbors:["sq_c3","sq_r9","sq_r15","sq_r16","sq_exit5"]},
-  {id:"sq_r15",   x:513, y:382, neighbors:["sq_r14","sq_exit5"]},
-  {id:"sq_r16",   x:538, y:249, neighbors:["sq_c3","sq_r14"]},
-  {id:"sq_exit5", x:444, y:406, neighbors:["sq_r14","sq_r15","sq_c3n"]},
+  // ── Rooms 1 & 2 (west side) connect to corridor_2 west via sq_c2w ──
+  // Room 1 door faces east into corridor_1 at ~y:278
+  {id:"sq_r1d",   x:81,  y:278, neighbors:["sq_c1n","sq_c1s"]},
+  // Room 2 door faces east into corridor_2 at ~y:371
+  {id:"sq_r2d",   x:81,  y:371, neighbors:["sq_c2w"]},
+  // Exit 3 — bottom of room 2
+  {id:"sq_exit3", x:56,  y:408, neighbors:["sq_c2w"]},
+  // Room 5 door faces east into corridor_2
+  {id:"sq_r5d",   x:108, y:376, neighbors:["sq_c2w"]},
+  // ── Corridor 2 west (horizontal, y≈377) ──
+  {id:"sq_c2w",   x:190, y:377, neighbors:["sq_r2d","sq_r5d","sq_exit3","sq_exit4","sq_c2e"]},
+  {id:"sq_exit4", x:199, y:409, neighbors:["sq_c2w","sq_c2e"]},
+  // ── Corridor 1 (vertical, x≈197) — connects rooms 3,4,6,7 ──
+  {id:"sq_c1n",   x:197, y:253, neighbors:["sq_r1d","sq_c1s","sq_r3d","sq_r6d"]},
+  {id:"sq_c1s",   x:197, y:316, neighbors:["sq_c1n","sq_r1d","sq_r4d","sq_r7d","sq_c2e"]},
+  // Room 3 door (south face into corridor_1)
+  {id:"sq_r3d",   x:129, y:253, neighbors:["sq_c1n"]},
+  // Room 4 door (south face into corridor_1)
+  {id:"sq_r4d",   x:129, y:316, neighbors:["sq_c1s"]},
+  // Room 6 door (west face into corridor_1)
+  {id:"sq_r6d",   x:218, y:252, neighbors:["sq_c1n","sq_c2e"]},
+  // Room 7 door (west face into corridor_1)
+  {id:"sq_r7d",   x:218, y:315, neighbors:["sq_c1s","sq_c2e"]},
+  // ── Corridor 2 east (horizontal, y≈376) ──
+  {id:"sq_c2e",   x:313, y:376, neighbors:["sq_c2w","sq_c1s","sq_r6d","sq_r7d","sq_exit4","sq_c3s","sq_r8d","sq_r10d"]},
+  // Room 8 door (south face)
+  {id:"sq_r8d",   x:342, y:280, neighbors:["sq_c2e","sq_r9d"]},
+  // Room 10 door (east face into corridor_2e)
+  {id:"sq_r10d",  x:357, y:320, neighbors:["sq_c2e","sq_c3s"]},
+  // ── Room 9 spans top, accessed from room 8 corridor ──
+  {id:"sq_r9d",   x:449, y:249, neighbors:["sq_r8d","sq_r16d","sq_r14d"]},
+  // ── Corridor 3 south (horizontal, y≈382) ──
+  {id:"sq_c3s",   x:395, y:382, neighbors:["sq_c2e","sq_r10d","sq_exit5","sq_c3mid"]},
+  {id:"sq_c3mid", x:440, y:382, neighbors:["sq_c3s","sq_exit5","sq_r15d"]},
+  {id:"sq_exit5", x:444, y:406, neighbors:["sq_c3s","sq_c3mid","sq_r15d","sq_r14d"]},
+  // Rooms 11, 12, 13 open west into corridor_3 south area
+  {id:"sq_r11d",  x:431, y:289, neighbors:["sq_r14d"]},
+  {id:"sq_r12d",  x:431, y:310, neighbors:["sq_r14d"]},
+  {id:"sq_r13d",  x:431, y:340, neighbors:["sq_r14d"]},
+  // ── Room 14 — central east room, connects to rooms 11-13, 15, 16, exit 5 ──
+  {id:"sq_r14d",  x:491, y:318, neighbors:["sq_r9d","sq_r11d","sq_r12d","sq_r13d","sq_r15d","sq_r16d","sq_exit5"]},
+  // Room 15 door (west face into corridor_3)
+  {id:"sq_r15d",  x:476, y:382, neighbors:["sq_r14d","sq_c3mid","sq_exit5"]},
+  // Room 16 door (south face)
+  {id:"sq_r16d",  x:538, y:279, neighbors:["sq_r9d","sq_r14d"]},
 ];
 
 export const ZONE_TO_NODES: Record<string, string[]> = {
-  room_5:         ["n_r5","n_c2w"],
-  room_6:         ["n_r6","n_c2w","n_c2e"],
-  corridor_2:     ["n_c2w","n_c2e"],
-  corridor_3:     ["n_c3"],
-  corridor_4:     ["n_c4w","n_c4m","n_c4e"],
-  corridor_5:     ["n_c5"],
-  corridor_6:     ["n_c6a","n_c6b"],
-  corridor_7:     ["n_c7","n_rm"],
-  corridor_large: ["n_rm","n_gym"],
+  // Main floor rooms
+  room_1:         ["n_r1","n_r1_c"],
+  room_2:         ["n_r2","n_r2_c"],
+  room_3:         ["n_r3","n_r3_c"],
+  room_4:         ["n_r4","n_r4_c"],
+  room_5:         ["n_r5"],
+  room_6:         ["n_r6"],
   room_7:         ["n_r7"],
   room_8:         ["n_r8"],
-  room_9:         ["n_r9"],
-  room_11:        ["n_r11","n_c6a"],
-  room_21:        ["n_gym"],
-  room_16:        ["n_r16"],
-  room_17:        ["n_r17"],
-  room_18:        ["n_r18"],
-  room_19:        ["n_r19"],
-  sq_corridor_1:  ["sq_c1","sq_exit4"],
-  sq_corridor_2:  ["sq_c2w","sq_c2m"],
-  sq_corridor_3:  ["sq_c3n","sq_exit5"],
-  sq_room_9:      ["sq_r9","sq_c3"],
-  sq_room_14:     ["sq_r14","sq_exit5"],
+  room_10:        ["n_r10d"],
+  room_11:        ["n_r11d"],
+  room_13:        ["n_r13d"],
+  room_14:        ["n_r14d"],
+  room_15:        ["n_r15"],
+  room_16:        ["n_r16d"],
+  room_20:        ["n_r20d"],
+  room_21:        ["n_gymj","n_gymc"],
+  room_22:        ["n_r22d"],
+  // Main floor corridors
+  corridor_2:     ["n_c2w","n_c2e","n_c2e_n"],
+  corridor_3:     ["n_c3w","n_c3e"],
+  corridor_4:     ["n_c4w","n_c4m","n_c4e"],
+  corridor_5:     ["n_c5s","n_c5n"],
+  corridor_6:     ["n_c6bot","n_c6mid","n_c6top"],
+  corridor_7:     ["n_c7s","n_c7n"],
+  corridor_large: ["n_rms","n_rmn","n_r16d","n_mc1","n_mc2","n_mc3","n_gymj"],
+  // Squash floor rooms
+  sq_room_1:      ["sq_r1d"],
+  sq_room_2:      ["sq_r2d"],
+  sq_room_3:      ["sq_r3d"],
+  sq_room_4:      ["sq_r4d"],
+  sq_room_5:      ["sq_r5d"],
+  sq_room_6:      ["sq_r6d"],
+  sq_room_7:      ["sq_r7d"],
+  sq_room_8:      ["sq_r8d"],
+  sq_room_9:      ["sq_r9d"],
+  sq_room_10:     ["sq_r10d"],
+  sq_room_11:     ["sq_r11d"],
+  sq_room_12:     ["sq_r12d"],
+  sq_room_13:     ["sq_r13d"],
+  sq_room_14:     ["sq_r14d"],
+  sq_room_15:     ["sq_r15d"],
+  sq_room_16:     ["sq_r16d"],
+  // Squash floor corridors
+  sq_corridor_1:  ["sq_c1n","sq_c1s"],
+  sq_corridor_2:  ["sq_c2w","sq_c2e"],
+  sq_corridor_3:  ["sq_c3s","sq_c3mid"],
 };
 
 export const MAIN_FLOOR: FloorData = {
